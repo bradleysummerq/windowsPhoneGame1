@@ -1,0 +1,3 @@
+Content\GameThumbnail.xnb
+Content\crap.xnb
+Content\crap.wmv

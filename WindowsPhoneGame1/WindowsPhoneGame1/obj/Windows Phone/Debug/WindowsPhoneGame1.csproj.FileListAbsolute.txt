@@ -1,0 +1,15 @@
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\bin\Windows Phone\Debug\WindowsPhoneGame1.dll
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\bin\Windows Phone\Debug\WindowsPhoneGame1.pdb
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\obj\Windows Phone\Debug\ResolveAssemblyReference.cache
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\obj\Windows Phone\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\obj\Windows Phone\Debug\WindowsPhoneGame1.dll
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\obj\Windows Phone\Debug\WindowsPhoneGame1.pdb
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\bin\Windows Phone\Debug\AppManifest.xaml
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\obj\Windows Phone\Debug\WMAppManifest.xml.g
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\obj\Windows Phone\Debug\WMAppManifest.xml
+bin\Windows Phone\Debug\GameThumbnail.png
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\bin\Windows Phone\Debug\WindowsPhoneGame1.xap
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\obj\Windows Phone\Debug\XapCacheFile.xml
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\bin\Windows Phone\Debug\Content\GameThumbnail.xnb
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\bin\Windows Phone\Debug\Content\crap.xnb
+c:\users\brad\documents\visual studio 2010\Projects\WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1\bin\Windows Phone\Debug\Content\crap.wmv

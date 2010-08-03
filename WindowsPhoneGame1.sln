@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010 Express for Windows Phone
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsPhoneGame1", "WindowsPhoneGame1\WindowsPhoneGame1\WindowsPhoneGame1.csproj", "{A3286F34-F378-41B7-BC11-3447D6F1FC84}"
+EndProject
+Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "WindowsPhoneGame1Content", "WindowsPhoneGame1\WindowsPhoneGame1Content\WindowsPhoneGame1Content.contentproj", "{B58DA6EF-7C8B-41BC-BDF6-A3F9307F8F10}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Windows Phone = Debug|Windows Phone
+		Release|Any CPU = Release|Any CPU
+		Release|Windows Phone = Release|Windows Phone
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A3286F34-F378-41B7-BC11-3447D6F1FC84}.Debug|Any CPU.ActiveCfg = Debug|Windows Phone
+		{A3286F34-F378-41B7-BC11-3447D6F1FC84}.Debug|Windows Phone.ActiveCfg = Debug|Windows Phone
+		{A3286F34-F378-41B7-BC11-3447D6F1FC84}.Debug|Windows Phone.Build.0 = Debug|Windows Phone
+		{A3286F34-F378-41B7-BC11-3447D6F1FC84}.Debug|Windows Phone.Deploy.0 = Debug|Windows Phone
+		{A3286F34-F378-41B7-BC11-3447D6F1FC84}.Release|Any CPU.ActiveCfg = Release|Windows Phone
+		{A3286F34-F378-41B7-BC11-3447D6F1FC84}.Release|Windows Phone.ActiveCfg = Release|Windows Phone
+		{A3286F34-F378-41B7-BC11-3447D6F1FC84}.Release|Windows Phone.Build.0 = Release|Windows Phone
+		{A3286F34-F378-41B7-BC11-3447D6F1FC84}.Release|Windows Phone.Deploy.0 = Release|Windows Phone
+		{B58DA6EF-7C8B-41BC-BDF6-A3F9307F8F10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B58DA6EF-7C8B-41BC-BDF6-A3F9307F8F10}.Debug|Windows Phone.ActiveCfg = Debug|Any CPU
+		{B58DA6EF-7C8B-41BC-BDF6-A3F9307F8F10}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{B58DA6EF-7C8B-41BC-BDF6-A3F9307F8F10}.Release|Windows Phone.ActiveCfg = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
