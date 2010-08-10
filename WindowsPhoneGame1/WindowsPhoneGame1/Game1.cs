@@ -45,7 +45,7 @@ namespace WindowsPhoneGame1
 
 
         List<Missile> m_missiles = new List<Missile>();
-        Vector2 m_SiloPosition;
+        MissileSilo m_silo;
         bool m_IsKeyDown;
         bool m_IsKeyReleased;
 
@@ -92,7 +92,10 @@ namespace WindowsPhoneGame1
             kootenay14 = this.Content.Load<SpriteFont>("Kootenay14");
             Vector2 textSize = kootenay14.MeasureString(TEXT);
             startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top);
-            m_SiloPosition = new Vector2(clientBounds.Left, clientBounds.Top);
+            m_silo = new MissileSilo();
+            m_silo.message = kootenay14;
+            m_silo.textPosition = new Vector2(clientBounds.Left, clientBounds.Top);
+            m_silo.text = "Silo";
 
             Vector2 endPosition = new Vector2(clientBounds.Left, clientBounds.Bottom - textSize.Y);
             pathVector = endPosition - startPosition;
@@ -108,7 +111,7 @@ namespace WindowsPhoneGame1
             for(int i = 0; i < m_missiles.Count(); i++)
             {
                 Missile m = m_missiles[i];
-                m.message = this.Content.Load<SpriteFont>("Kootenay14");
+                m.message = kootenay14;
                 textSize = m.message.MeasureString("missile");
                 m.textPosition = startPosition;
                 m.startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top + i*30);
@@ -170,13 +173,15 @@ namespace WindowsPhoneGame1
                         Vector2 textSize = kootenay14.MeasureString(TEXT);
                     
                         textSize = missile.message.MeasureString("missile");
-                        missile.startPosition = m_SiloPosition;
+                        missile.startPosition = m_silo.textPosition;
                         missile.textPosition = missile.startPosition;
                         missile.pathVector = touchReleasePoint - missile.startPosition;
                         missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
-                        missile.rotation = -(float) Math.PI / 2f;
                         missile.scale = 1;
 
+                        float rotation = (float)Math.Acos((double) missile.pathVector.X / missile.pathVector.Length());
+                        
+                        missile.rotation = rotation - (float) Math.PI;
                         m_missiles.Add(missile);
                     }
                 }
@@ -272,15 +277,13 @@ namespace WindowsPhoneGame1
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //spriteBatch.Draw(texture1, spritePosition1, Color.White);
             spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
-
+            spriteBatch.DrawString(m_silo.message, m_silo.text, m_silo.textPosition, Color.Gray);
             foreach (Missile m in m_missiles)
-            {
-                
+            {       
                 spriteBatch.DrawString(kootenay14, "missile", m.textPosition, Color.White, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
             }
 
             spriteBatch.End();
-
 
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.Opaque);
             //spriteBatch.Draw(texture2, spritePosition2, Color.Gray);
@@ -290,17 +293,26 @@ namespace WindowsPhoneGame1
         }
     }
 
-    public class Missile
+    public class TextItem
     {
         public SpriteFont message;
-        public Vector2 pathVector;
+        public string text;
         public Vector2 textPosition;
+    }
+
+    public class MissileSilo : TextItem
+    {
+
+    }
+
+    public class Missile : TextItem
+    {
+        public Vector2 pathVector;
         public Vector2 startPosition;
         public float lapSpeed;
         public float tLap;
         public float rotation;
         public float origin;
-        public float scale;
-        
+        public float scale;        
     }
 }
