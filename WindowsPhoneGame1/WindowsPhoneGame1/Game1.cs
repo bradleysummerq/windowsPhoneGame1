@@ -43,11 +43,19 @@ namespace WindowsPhoneGame1
         float tLap;
         SoundEffect soundEffect;
 
-
+        List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
-        MissileSilo m_silo;
+        List<Shockwave> m_shockwaves = new List<Shockwave>();
+
+        MissileSilo m_silo = new MissileSilo();
         bool m_IsKeyDown;
         bool m_IsKeyReleased;
+        
+        SoundEffect m_missileLaunch;
+        SoundEffect m_missileStrike1;
+        SoundEffect m_missileStrike2;
+        SoundEffect m_siren;
+        Vector2 m_shockwaveDisplacement;
 
         public Game1()
         {
@@ -86,24 +94,27 @@ namespace WindowsPhoneGame1
 
             soundEffect = Content.Load<SoundEffect>("explosion");
 
-
+            m_missileLaunch = Content.Load<SoundEffect>("missile");
+            m_missileStrike1 = Content.Load<SoundEffect>("explosion");
+            
             spriteBatch = new SpriteBatch(GraphicsDevice);
             Rectangle clientBounds = this.Window.ClientBounds;
             kootenay14 = this.Content.Load<SpriteFont>("Kootenay14");
             Vector2 textSize = kootenay14.MeasureString(TEXT);
             startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top);
-            m_silo = new MissileSilo();
+         
             m_silo.message = kootenay14;
             m_silo.textPosition = new Vector2(clientBounds.Left, clientBounds.Top);
             m_silo.text = "Silo";
 
+            
             Vector2 endPosition = new Vector2(clientBounds.Left, clientBounds.Bottom - textSize.Y);
             pathVector = endPosition - startPosition;
 
             lapSpeed = SPEED / (2 * pathVector.Length());
             textPosition = startPosition;
 
-            for(int i = 0; i < 3; i++)
+            for(int i = 0; i < 0; i++)
             {
                 m_missiles.Add(new Missile() );
             }
@@ -183,6 +194,7 @@ namespace WindowsPhoneGame1
                         
                         missile.rotation = rotation - (float) Math.PI;
                         m_missiles.Add(missile);
+                        m_missileLaunch.Play();
                     }
                 }
             }
@@ -208,10 +220,37 @@ namespace WindowsPhoneGame1
             {
                 m.tLap += m.lapSpeed * (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 m.tLap %= 1;
-                pLap = m.tLap < 0.5f ? 2 * m.tLap : 2 - 2 * m.tLap;
- 
+                pLap = 2 * m.tLap ;
+
+                if (m.tLap > 0.5f)
+                {
+                    // the missile is at it's end point, we need to add a crater. 
+                    Crater crater = new Crater();
+                    crater.message = kootenay14;
+                    crater.text = "Crater";
+                    crater.textPosition = m.textPosition;
+
+                    m_craters.Add(crater);
+                    m_missileStrike1.Play();
+
+                    Shockwave shock = new Shockwave();
+                    shock.totalMsStartTime = gameTime.TotalGameTime.TotalMilliseconds;
+                    shock.m_displacement = new Vector2(10f);
+                    m_shockwaves.Add(shock);
+                }
+
                 m.textPosition = m.startPosition + m.pathVector * pLap;
             }
+
+            //remove any missiles that have reached their destination. 
+            m_missiles = m_missiles.Where(m => m.tLap < 0.5f).ToList();
+            var shockwavesToEliminate = m_shockwaves.Count(s => (gameTime.TotalGameTime.TotalMilliseconds - s.totalMsStartTime) > 1000);
+            if (shockwavesToEliminate > 0)
+            {
+                //System.Diagnostics.Debug.Assert(false);
+            }
+
+            m_shockwaves = m_shockwaves.Where(s => (gameTime.TotalGameTime.TotalMilliseconds - s.totalMsStartTime) < 1000).ToList();
 
             base.Update(gameTime);
 
@@ -272,15 +311,34 @@ namespace WindowsPhoneGame1
         protected override void Draw(GameTime gameTime)
         {
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+            Vector2 GlobalDisplacement = Vector2.Zero;
+            foreach (Shockwave s in m_shockwaves)
+            {
+                double timeSinceShockStart = gameTime.TotalGameTime.TotalMilliseconds - s.totalMsStartTime;
+                if( timeSinceShockStart < 400 )
+                {
+                    GlobalDisplacement += new Vector2( 0f, 20f);
+                }
+                else if (timeSinceShockStart < 1000)
+                {
+                    GlobalDisplacement += new Vector2( 0f, -20f);
+                }
+                
+            }
 
             // Draw the sprite.
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //spriteBatch.Draw(texture1, spritePosition1, Color.White);
             spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
-            spriteBatch.DrawString(m_silo.message, m_silo.text, m_silo.textPosition, Color.Gray);
+            spriteBatch.DrawString(m_silo.message, m_silo.text, m_silo.textPosition + GlobalDisplacement, Color.Gray);
             foreach (Missile m in m_missiles)
             {       
                 spriteBatch.DrawString(kootenay14, "missile", m.textPosition, Color.White, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
+            }
+
+            foreach (Crater c in m_craters)
+            {
+                spriteBatch.DrawString(c.message, c.text, c.textPosition + GlobalDisplacement, Color.Red, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
 
             spriteBatch.End();
@@ -302,7 +360,10 @@ namespace WindowsPhoneGame1
 
     public class MissileSilo : TextItem
     {
+    }
 
+    public class Crater : TextItem
+    {
     }
 
     public class Missile : TextItem
@@ -315,4 +376,11 @@ namespace WindowsPhoneGame1
         public float origin;
         public float scale;        
     }
+
+    public class Shockwave
+    {
+        public Vector2 m_displacement;
+        public double totalMsStartTime;
+    }
+
 }
