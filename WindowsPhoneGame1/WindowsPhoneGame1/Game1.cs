@@ -104,7 +104,7 @@ namespace WindowsPhoneGame1
             startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top);
          
             m_silo.message = kootenay14;
-            m_silo.textPosition = new Vector2(clientBounds.Left, clientBounds.Top);
+            m_silo.textPosition = new Vector2(clientBounds.Right, clientBounds.Top);
             m_silo.text = "Silo";
 
             
@@ -189,10 +189,16 @@ namespace WindowsPhoneGame1
                         missile.pathVector = touchReleasePoint - missile.startPosition;
                         missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
                         missile.scale = 1;
-
-                        float rotation = (float)Math.Acos((double) missile.pathVector.X / missile.pathVector.Length());
+                        float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length()) - (float)Math.PI / 2;
                         
-                        missile.rotation = rotation - (float) Math.PI;
+                        if (missile.pathVector.Y > 0)
+                        {
+                            //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
+                            //a full 2*PI range. 
+                            rotation = -rotation;
+                        }
+
+                        missile.rotation = rotation;
                         m_missiles.Add(missile);
                         m_missileLaunch.Play();
                     }
@@ -314,16 +320,14 @@ namespace WindowsPhoneGame1
             Vector2 GlobalDisplacement = Vector2.Zero;
             foreach (Shockwave s in m_shockwaves)
             {
+
                 double timeSinceShockStart = gameTime.TotalGameTime.TotalMilliseconds - s.totalMsStartTime;
+
                 if( timeSinceShockStart < 400 )
                 {
-                    GlobalDisplacement += new Vector2( 0f, 20f);
+                    float displacement = (float) (400 * Math.Sin(timeSinceShockStart) / timeSinceShockStart);
+                    GlobalDisplacement += new Vector2( 0f, displacement);
                 }
-                else if (timeSinceShockStart < 1000)
-                {
-                    GlobalDisplacement += new Vector2( 0f, -20f);
-                }
-                
             }
 
             // Draw the sprite.
