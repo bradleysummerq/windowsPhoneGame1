@@ -51,13 +51,17 @@ namespace WindowsPhoneGame1
 
         MissileSilo m_silo = new MissileSilo();
         bool m_IsKeyDown;
+        bool m_StartClickOnObject;
         bool m_IsKeyReleased;
-        
+        TouchCollection m_previousTouchState;
+
         SoundEffect m_missileLaunch;
         SoundEffect m_missileStrike1;
         SoundEffect m_missileStrike2;
         SoundEffect m_siren;
-        Vector2 m_shockwaveDisplacement;
+        Vector2 m_startDragPosition;
+        static Vector2 m_translation;
+        
 
         public Game1()
         {
@@ -96,6 +100,8 @@ namespace WindowsPhoneGame1
 
             soundEffect = Content.Load<SoundEffect>("explosion");
 
+
+            m_translation = Vector2.Zero;
             m_missileLaunch = Content.Load<SoundEffect>("missile");
             m_missileStrike1 = Content.Load<SoundEffect>("explosion");
             
@@ -141,6 +147,7 @@ namespace WindowsPhoneGame1
             }
 
             m_IsKeyDown = false;
+            m_StartClickOnObject = false;
             m_IsKeyReleased = false;
             spritePosition1.X = 0;
             spritePosition1.Y = 0;
@@ -171,46 +178,65 @@ namespace WindowsPhoneGame1
                 ButtonState.Pressed)
                 this.Exit();
 
-            var touchstate = TouchPanel.GetState();
-            if (touchstate.Count > 0)
+            var touchState = TouchPanel.GetState();
+
+            // check to see if the user is starting to touch the screen. 
+            if( touchState.Count > 0 && m_previousTouchState.Count == 0 )
             {
-                for (int i = 0; i < touchstate.Count; i++)
+                m_IsKeyDown = true;
+                m_startDragPosition = touchState[0].Position;
+
+                // figure out if the users touch intersects with any objects. 
+                m_StartClickOnObject = false;
+                Vector2 touchReleasePoint = touchState[0].Position;
+                if( (MapGameToScreenCoordinates(m_silo.textPosition - touchReleasePoint)).Length() < 30 )
                 {
-                    var touchData = touchstate[i];
-                    if (touchData.State == TouchLocationState.Pressed)
-                    {
-                        m_IsKeyDown = true;
-                    }
-                    
-                    if (touchData.State == TouchLocationState.Released)
-                    {
-
-                        Vector2 touchReleasePoint = touchData.Position;
-                        var missile = new Missile();
-
-                        missile.message = this.Content.Load<SpriteFont>("Kootenay14");
-                        Vector2 textSize = kootenay14.MeasureString(TEXT);
-                    
-                        textSize = missile.message.MeasureString("missile");
-                        missile.startPosition = m_silo.textPosition;
-                        missile.textPosition = missile.startPosition;
-                        missile.pathVector = touchReleasePoint - missile.startPosition;
-                        missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
-                        missile.scale = 1;
-                        float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
-                        
-                        if (missile.pathVector.Y < 0)
-                        {
-                            //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
-                            //a full 2*PI range. 
-                            rotation = -rotation;
-                        }
-
-                        missile.rotation = rotation;
-                        m_missiles.Add(missile);
-                        m_missileLaunch.Play();
-                    }
+                    m_StartClickOnObject = true;
                 }
+                
+                // if not, then just move the map position. 
+            }
+            if( touchState.Count > 0 
+                && !m_StartClickOnObject
+                && touchState[0].State == TouchLocationState.Moved )
+            {
+
+                m_translation += touchState[0].Position - m_previousTouchState[0].Position;
+            }
+
+            // check to see if the user has released an existing touch.
+            if( touchState.Count > 0 
+                && m_StartClickOnObject
+                && touchState[0].State == TouchLocationState.Released 
+                && (m_previousTouchState[0].State == TouchLocationState.Moved || m_previousTouchState[0].State == TouchLocationState.Pressed) )
+
+            {
+
+                Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
+
+                var missile = new Missile();
+
+                missile.message = this.Content.Load<SpriteFont>("Kootenay14");
+                Vector2 textSize = kootenay14.MeasureString(TEXT);
+
+                textSize = missile.message.MeasureString("missile");
+                missile.startPosition = m_silo.textPosition;
+                missile.textPosition = missile.startPosition;
+                missile.pathVector = touchReleasePoint - missile.startPosition;
+                missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
+                missile.scale = 1;
+                float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
+
+                if (missile.pathVector.Y < 0)
+                {
+                    //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
+                    //a full 2*PI range. 
+                    rotation = -rotation;
+                }
+
+                missile.rotation = rotation;
+                m_missiles.Add(missile);
+                m_missileLaunch.Play();
             }
             
             // Move the sprite around.
@@ -266,6 +292,7 @@ namespace WindowsPhoneGame1
 
             m_shockwaves = m_shockwaves.Where(s => (gameTime.TotalGameTime.TotalMilliseconds - s.totalMsStartTime) < 1000).ToList();
 
+            m_previousTouchState = touchState;
             base.Update(gameTime);
 
         }
@@ -341,25 +368,25 @@ namespace WindowsPhoneGame1
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //spriteBatch.Draw(texture1, spritePosition1, Color.White);
             spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
-            spriteBatch.DrawString(m_silo.message, m_silo.text, m_silo.textPosition + GlobalDisplacement, Color.LightGreen);
+            spriteBatch.DrawString(m_silo.message, m_silo.text, MapGameToScreenCoordinates(m_silo.textPosition + GlobalDisplacement), Color.LightGreen);
             foreach (Missile m in m_missiles)
             {       
-                spriteBatch.DrawString(kootenay14, "missile", m.textPosition, Color.OrangeRed, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, "missile", MapGameToScreenCoordinates(m.textPosition), Color.OrangeRed, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
             }
 
             foreach (Crater c in m_craters)
             {
-                spriteBatch.DrawString(c.message, c.text, c.textPosition + GlobalDisplacement, Color.Gray, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(c.message, c.text, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), Color.Gray, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
 
             foreach (InterceptorSite i in m_interceptorSites)
             {
-                spriteBatch.DrawString(i.message, i.text, i.textPosition + GlobalDisplacement, Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(i.message, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
 
             foreach (Interceptor i in m_interceptors)
             {
-                spriteBatch.DrawString(i.message, i.text, i.textPosition + GlobalDisplacement, Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(i.message, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
             
 
@@ -370,6 +397,18 @@ namespace WindowsPhoneGame1
             spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        public static Vector2 MapGameToScreenCoordinates(Vector2 gameCoordinates)
+        {
+            Vector2 screenCoordinates = m_translation + gameCoordinates;
+            return screenCoordinates;
+        }
+
+        public static Vector2 MapClickPointToMapCoordinates(Vector2 clickPoint)
+        {
+            Vector2 mapCoordinates = clickPoint - m_translation;
+            return mapCoordinates;
         }
     }
 
