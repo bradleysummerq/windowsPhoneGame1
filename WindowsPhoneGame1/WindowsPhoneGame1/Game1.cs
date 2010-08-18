@@ -46,6 +46,8 @@ namespace WindowsPhoneGame1
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
         List<Shockwave> m_shockwaves = new List<Shockwave>();
+        List<InterceptorSite> m_interceptorSites = new List<InterceptorSite>();
+        List<Interceptor> m_interceptors = new List<Interceptor>();
 
         MissileSilo m_silo = new MissileSilo();
         bool m_IsKeyDown;
@@ -104,10 +106,16 @@ namespace WindowsPhoneGame1
             startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top);
          
             m_silo.message = kootenay14;
-            m_silo.textPosition = new Vector2(clientBounds.Right, clientBounds.Top);
+            m_silo.textPosition = new Vector2(clientBounds.Top, clientBounds.Right - 30);
             m_silo.text = "Silo";
 
-            
+            var interceptorSite = new InterceptorSite();
+            interceptorSite.message = kootenay14;
+            interceptorSite.text = "Interceptor";
+            interceptorSite.textPosition = new Vector2(clientBounds.Left, clientBounds.Bottom);
+
+            m_interceptorSites.Add(interceptorSite);
+
             Vector2 endPosition = new Vector2(clientBounds.Left, clientBounds.Bottom - textSize.Y);
             pathVector = endPosition - startPosition;
 
@@ -189,9 +197,9 @@ namespace WindowsPhoneGame1
                         missile.pathVector = touchReleasePoint - missile.startPosition;
                         missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
                         missile.scale = 1;
-                        float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length()) - (float)Math.PI / 2;
+                        float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
                         
-                        if (missile.pathVector.Y > 0)
+                        if (missile.pathVector.Y < 0)
                         {
                             //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
                             //a full 2*PI range. 
@@ -316,11 +324,10 @@ namespace WindowsPhoneGame1
 
         protected override void Draw(GameTime gameTime)
         {
-            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+            graphics.GraphicsDevice.Clear(Color.Black);
             Vector2 GlobalDisplacement = Vector2.Zero;
             foreach (Shockwave s in m_shockwaves)
             {
-
                 double timeSinceShockStart = gameTime.TotalGameTime.TotalMilliseconds - s.totalMsStartTime;
 
                 if( timeSinceShockStart < 400 )
@@ -334,16 +341,27 @@ namespace WindowsPhoneGame1
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //spriteBatch.Draw(texture1, spritePosition1, Color.White);
             spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
-            spriteBatch.DrawString(m_silo.message, m_silo.text, m_silo.textPosition + GlobalDisplacement, Color.Gray);
+            spriteBatch.DrawString(m_silo.message, m_silo.text, m_silo.textPosition + GlobalDisplacement, Color.LightGreen);
             foreach (Missile m in m_missiles)
             {       
-                spriteBatch.DrawString(kootenay14, "missile", m.textPosition, Color.White, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, "missile", m.textPosition, Color.OrangeRed, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
             }
 
             foreach (Crater c in m_craters)
             {
-                spriteBatch.DrawString(c.message, c.text, c.textPosition + GlobalDisplacement, Color.Red, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(c.message, c.text, c.textPosition + GlobalDisplacement, Color.Gray, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
+
+            foreach (InterceptorSite i in m_interceptorSites)
+            {
+                spriteBatch.DrawString(i.message, i.text, i.textPosition + GlobalDisplacement, Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+            }
+
+            foreach (Interceptor i in m_interceptors)
+            {
+                spriteBatch.DrawString(i.message, i.text, i.textPosition + GlobalDisplacement, Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+            }
+            
 
             spriteBatch.End();
 
@@ -363,6 +381,14 @@ namespace WindowsPhoneGame1
     }
 
     public class MissileSilo : TextItem
+    {
+    }
+
+    public class InterceptorSite : TextItem
+    {
+    }
+
+    public class Interceptor : TextItem
     {
     }
 
