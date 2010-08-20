@@ -44,6 +44,10 @@ namespace WindowsPhoneGame1
         SoundEffect soundEffect;
 
         List<String> debugOutput = new List<String>();
+        int upperCoordX = 0;
+        int lowerCoordX = 800;
+        int leftCoordY = 480;
+        int rightCoordY = 0;
 
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
@@ -64,7 +68,6 @@ namespace WindowsPhoneGame1
         SoundEffect m_siren;
         Vector2 m_startDragPosition;
         static Vector2 m_translation;
-        
 
         public Game1()
         {
@@ -119,15 +122,17 @@ namespace WindowsPhoneGame1
 
             m_borders = new List<Border>();
 
-            int borderTopCoordinate = clientBounds.Top + 200;
-            for (int i = 0; i < 5; i++)
+            string borderText = "-------------";
+            Vector2 borderSize = kootenay14.MeasureString(borderText);
+            int borderTopCoordinate = lowerCoordX - (int)borderSize.X - (int)borderSize.Y;
+
+            for (int i = 0; i < 9; i++)
             {
                 var b = new Border();
                 b.message = kootenay14;
                 b.text = "border";
                 b.rotation = (float) -Math.PI/2;
                 b.scale = 1f;
-                Vector2 borderSize = kootenay14.MeasureString(b.text);
                 b.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - 30 - i * borderSize.X);
                 m_borders.Add(b);
 
@@ -138,6 +143,22 @@ namespace WindowsPhoneGame1
                 bCol.scale = 1f;
                 bCol.textPosition = new Vector2(borderTopCoordinate + borderSize.Y, clientBounds.Right - 30 - i * borderSize.X);
                 m_borders.Add(bCol);
+
+                Border tHoriz = new Border();
+                Border tVert = new Border();
+
+                tHoriz.text = borderText;
+                tHoriz.rotation = (float) -Math.PI/2;
+                tHoriz.scale = 1f;
+                tHoriz.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - 30 - i * borderSize.X);
+                m_borders.Add(tHoriz);
+
+                tVert.text = borderText;
+                tVert.rotation = 0f;
+                tVert.scale = 1f;
+                tVert.textPosition = new Vector2(borderTopCoordinate + borderSize.Y, clientBounds.Right - 30 - i * borderSize.X);
+                m_borders.Add(tVert);
+
             }
 
             m_silo.message = kootenay14;
@@ -406,6 +427,10 @@ namespace WindowsPhoneGame1
             //spriteBatch.Draw(texture1, spritePosition1, Color.White);
             spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
             spriteBatch.DrawString(m_silo.message, m_silo.text, MapGameToScreenCoordinates(m_silo.textPosition + GlobalDisplacement), Color.LightGreen);
+            foreach (TextItem t in m_silo.art.items)
+            {
+                spriteBatch.DrawString(kootenay14, t.text, MapGameToScreenCoordinates(t.textPosition + m_silo.textPosition), Color.LightCoral, t.rotation, t.origin, t.scale, SpriteEffects.None, 0f);
+            }
 
             Rectangle clientBounds = this.Window.ClientBounds;
             Vector2 stringDimensions = kootenay14.MeasureString("blah");
@@ -425,7 +450,7 @@ namespace WindowsPhoneGame1
             }
             foreach (Border b in m_borders)
             {
-                spriteBatch.DrawString(b.message, b.text, b.textPosition, Color.OrangeRed, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
+                spriteBatch.DrawString(kootenay14, b.text, b.textPosition, Color.OrangeRed, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
             }
             foreach (Missile m in m_missiles)
             {       
@@ -433,15 +458,15 @@ namespace WindowsPhoneGame1
             }
             foreach (Crater c in m_craters)
             {
-                spriteBatch.DrawString(c.message, c.text, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), Color.Gray, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, c.text, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), Color.Gray, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
             foreach (InterceptorSite i in m_interceptorSites)
             {
-                spriteBatch.DrawString(i.message, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
             foreach (Interceptor i in m_interceptors)
             {
-                spriteBatch.DrawString(i.message, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
 
             spriteBatch.End();
@@ -469,12 +494,40 @@ namespace WindowsPhoneGame1
     public class TextItem
     {
         public SpriteFont message;
-        public string text;
+        public string text = "unassigned^&^*text";
         public Vector2 textPosition;
+        public float rotation = 0f;
+        public Vector2 origin = Vector2.Zero;
+        public float scale = 1f;
+    }
+
+    public class TextArt
+    {
+        public List<TextItem> items = new List<TextItem>();
     }
 
     public class MissileSilo : TextItem
     {
+        public TextArt art = new TextArt();
+
+        public MissileSilo()
+        {
+            TextItem t1 = new TextItem();
+            t1.text = "silo";
+            t1.textPosition = Vector2.Zero;
+
+            TextItem t2 = new TextItem();
+            t2.text = "silo";
+            t2.textPosition = new Vector2(0, 20);
+
+            TextItem t3 = new TextItem();
+            t3.text = "silo";
+            t3.textPosition = new Vector2(0, 40);
+
+            art.items.Add(t1);
+            art.items.Add(t2);
+            art.items.Add(t3);
+        }
     }
 
     public class InterceptorSite : TextItem
@@ -495,9 +548,7 @@ namespace WindowsPhoneGame1
         public Vector2 startPosition;
         public float lapSpeed;
         public float tLap;
-        public float rotation;
         public float origin;
-        public float scale;        
     }
 
     public class Shockwave
