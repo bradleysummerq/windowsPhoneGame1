@@ -34,7 +34,7 @@ namespace WindowsPhoneGame1
         const float SPEED = 120f / 1000; // pixels per millisecond
         const string TEXT = "Hello, Windows Phone!";
  
-        SpriteFont kootenay14;
+        public static SpriteFont kootenay14;
         Vector2 pathVector;
         Vector2 textPosition;
         Vector2 startPosition;
@@ -56,7 +56,7 @@ namespace WindowsPhoneGame1
         List<Interceptor> m_interceptors = new List<Interceptor>();
         List<Border> m_borders = new List<Border>();
 
-        MissileSilo m_silo = new MissileSilo();
+        MissileSilo m_silo;
         bool m_IsKeyDown;
         bool m_StartClickOnObject;
         bool m_IsKeyReleased;
@@ -129,7 +129,6 @@ namespace WindowsPhoneGame1
             for (int i = 0; i < 9; i++)
             {
                 var b = new Border();
-                b.message = kootenay14;
                 b.text = "border";
                 b.rotation = (float) -Math.PI/2;
                 b.scale = 1f;
@@ -137,7 +136,6 @@ namespace WindowsPhoneGame1
                 m_borders.Add(b);
 
                 var bCol = new Border();
-                bCol.message = kootenay14;
                 bCol.text = "border";
                 bCol.rotation = 0f;
                 bCol.scale = 1f;
@@ -160,15 +158,13 @@ namespace WindowsPhoneGame1
                 m_borders.Add(tVert);
 
             }
-
-            m_silo.message = kootenay14;
+            m_silo = new MissileSilo();
             m_silo.textPosition = new Vector2(clientBounds.Top, clientBounds.Right - 30);
             m_silo.text = "Silo";
 
 
 
             var interceptorSite = new InterceptorSite();
-            interceptorSite.message = kootenay14;
             interceptorSite.text = "Interceptor";
             interceptorSite.textPosition = new Vector2(clientBounds.Left, clientBounds.Bottom);
 
@@ -179,24 +175,6 @@ namespace WindowsPhoneGame1
 
             lapSpeed = SPEED / (2 * pathVector.Length());
             textPosition = startPosition;
-
-            for(int i = 0; i < 0; i++)
-            {
-                m_missiles.Add(new Missile() );
-            }
-
-            for(int i = 0; i < m_missiles.Count(); i++)
-            {
-                Missile m = m_missiles[i];
-                m.message = kootenay14;
-                textSize = m.message.MeasureString("missile");
-                m.textPosition = startPosition;
-                m.startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top + i*30);
-                m.lapSpeed = lapSpeed;
-                m.pathVector = endPosition - startPosition;
-                m.rotation = -(float) Math.PI / 2f;
-                m.scale = 1;
-            }
 
             m_IsKeyDown = false;
             m_StartClickOnObject = false;
@@ -247,7 +225,11 @@ namespace WindowsPhoneGame1
                 // figure out if the users touch intersects with any objects. 
                 m_StartClickOnObject = false;
                 Vector2 touchReleasePoint = touchState[0].Position;
-                if( (MapGameToScreenCoordinates(m_silo.textPosition - touchReleasePoint)).Length() < 30 )
+               
+
+
+                Rectangle touchRectangle = Vect2Rect( MapClickPointToMapCoordinates( touchReleasePoint) );
+                if ( m_silo.boundingBox().Intersects(touchRectangle) )
                 {
                     m_StartClickOnObject = true;
                 }
@@ -274,10 +256,9 @@ namespace WindowsPhoneGame1
 
                 var missile = new Missile();
 
-                missile.message = this.Content.Load<SpriteFont>("Kootenay14");
                 Vector2 textSize = kootenay14.MeasureString(TEXT);
 
-                textSize = missile.message.MeasureString("missile");
+                textSize = kootenay14.MeasureString("missile");
                 missile.startPosition = m_silo.textPosition;
                 missile.textPosition = missile.startPosition;
                 missile.pathVector = touchReleasePoint - missile.startPosition;
@@ -324,7 +305,6 @@ namespace WindowsPhoneGame1
                 {
                     // the missile is at it's end point, we need to add a crater. 
                     Crater crater = new Crater();
-                    crater.message = kootenay14;
                     crater.text = "Crater";
                     crater.textPosition = m.textPosition;
 
@@ -426,7 +406,7 @@ namespace WindowsPhoneGame1
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //spriteBatch.Draw(texture1, spritePosition1, Color.White);
             spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
-            spriteBatch.DrawString(m_silo.message, m_silo.text, MapGameToScreenCoordinates(m_silo.textPosition + GlobalDisplacement), Color.LightGreen);
+            spriteBatch.DrawString(kootenay14, m_silo.text, MapGameToScreenCoordinates(m_silo.textPosition + GlobalDisplacement), Color.LightGreen);
             foreach (TextItem t in m_silo.art.items)
             {
                 spriteBatch.DrawString(kootenay14, t.text, MapGameToScreenCoordinates(t.textPosition + m_silo.textPosition), Color.LightCoral, t.rotation, t.origin, t.scale, SpriteEffects.None, 0f);
@@ -478,6 +458,23 @@ namespace WindowsPhoneGame1
             base.Draw(gameTime);
         }
 
+        /// <summary>
+        /// inputs a vector, and returns a 1x1 rectangle at the vectors position. 
+        /// this is a helper function for a task which I commonly use when determining
+        /// if a point intersects with a rectangle. 
+        /// </summary>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static Rectangle Vect2Rect(Vector2 v)
+        {
+            return new Rectangle((int)v.X, (int)v.Y, 1, 1);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="gameCoordinates"></param>
+        /// <returns></returns>
         public static Vector2 MapGameToScreenCoordinates(Vector2 gameCoordinates)
         {
             Vector2 screenCoordinates = m_translation + gameCoordinates;
@@ -493,7 +490,6 @@ namespace WindowsPhoneGame1
 
     public class TextItem
     {
-        public SpriteFont message;
         public string text = "unassigned^&^*text";
         public Vector2 textPosition;
         public float rotation = 0f;
@@ -504,6 +500,7 @@ namespace WindowsPhoneGame1
     public class TextArt
     {
         public List<TextItem> items = new List<TextItem>();
+
     }
 
     public class MissileSilo : TextItem
@@ -512,21 +509,51 @@ namespace WindowsPhoneGame1
 
         public MissileSilo()
         {
+            string SiloText = "SILO";
+            Vector2 textSize = Game1.kootenay14.MeasureString(SiloText);
+            textSize.X = textSize.X - 25;
             TextItem t1 = new TextItem();
-            t1.text = "silo";
+            t1.text = SiloText;
             t1.textPosition = Vector2.Zero;
 
             TextItem t2 = new TextItem();
-            t2.text = "silo";
-            t2.textPosition = new Vector2(0, 20);
+            t2.text = SiloText;
+            t2.textPosition = new Vector2(0, textSize.X);
 
             TextItem t3 = new TextItem();
-            t3.text = "silo";
-            t3.textPosition = new Vector2(0, 40);
+            t3.text = SiloText;
+            t3.textPosition = new Vector2(0, textSize.X * 2);
 
             art.items.Add(t1);
             art.items.Add(t2);
             art.items.Add(t3);
+        }
+
+        public Rectangle boundingBox()
+        {
+           
+            TextItem initialItem = art.items[0];
+            Vector2 initialTextSize = Game1.kootenay14.MeasureString(initialItem.text);
+            Rectangle initialBox = new Rectangle(
+                (int)initialItem.textPosition.X, 
+                (int)initialItem.textPosition.Y, 
+                (int)initialTextSize.X, 
+                (int)initialTextSize.Y );
+
+            for (int i = 1; i < art.items.Count(); i++)
+            {
+                TextItem text = art.items[i];
+                Vector2 textSize = Game1.kootenay14.MeasureString(text.text);
+                Rectangle newRectangle = new Rectangle(
+                    (int)text.textPosition.X,
+                    (int)text.textPosition.Y,
+                    (int)textSize.X,
+                    (int)textSize.Y);
+                
+                initialBox = Rectangle.Union(newRectangle, initialBox);
+            }
+            
+            return new Rectangle( (int)(initialBox.X + textPosition.X), (int)(initialBox.Y + textPosition.Y), initialBox.Width, initialBox.Height );
         }
     }
 
