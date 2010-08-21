@@ -68,6 +68,7 @@ namespace WindowsPhoneGame1
         SoundEffect m_siren;
         Vector2 m_startDragPosition;
         static Vector2 m_translation;
+        public static float HalfPI = (float) Math.PI / 2;
 
         public Game1()
         {
@@ -409,7 +410,7 @@ namespace WindowsPhoneGame1
             spriteBatch.DrawString(kootenay14, m_silo.text, MapGameToScreenCoordinates(m_silo.textPosition + GlobalDisplacement), Color.LightGreen);
             foreach (TextItem t in m_silo.art.items)
             {
-                spriteBatch.DrawString(kootenay14, t.text, MapGameToScreenCoordinates(t.textPosition + m_silo.textPosition), Color.LightCoral, t.rotation, t.origin, t.scale, SpriteEffects.None, 0f);
+                spriteBatch.DrawString(kootenay14, t.text, MapGameToScreenCoordinates(t.textPosition + m_silo.textPosition), t.color, t.rotation, t.origin, t.scale, SpriteEffects.None, 0f);
             }
 
             Rectangle clientBounds = this.Window.ClientBounds;
@@ -421,7 +422,7 @@ namespace WindowsPhoneGame1
                         kootenay14, 
                         val, 
                         new Vector2(clientBounds.Top + i*stringDimensions.Y, clientBounds.Right - 30), 
-                        Color.White, 
+                        Color.White,
                         (float) -Math.PI / 2, 
                         Vector2.Zero,
                         1f, 
@@ -430,23 +431,23 @@ namespace WindowsPhoneGame1
             }
             foreach (Border b in m_borders)
             {
-                spriteBatch.DrawString(kootenay14, b.text, b.textPosition, Color.OrangeRed, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
+                spriteBatch.DrawString(kootenay14, b.text, b.textPosition, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
             }
             foreach (Missile m in m_missiles)
             {       
-                spriteBatch.DrawString(kootenay14, "missile", MapGameToScreenCoordinates(m.textPosition), Color.OrangeRed, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, "missile", MapGameToScreenCoordinates(m.textPosition), m.color, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
             }
             foreach (Crater c in m_craters)
             {
-                spriteBatch.DrawString(kootenay14, c.text, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), Color.Gray, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, c.text, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), c.color, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
             foreach (InterceptorSite i in m_interceptorSites)
             {
-                spriteBatch.DrawString(kootenay14, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), i.color, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
             foreach (Interceptor i in m_interceptors)
             {
-                spriteBatch.DrawString(kootenay14, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), Color.LightBlue, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.DrawString(kootenay14, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), i.color, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
             }
 
             spriteBatch.End();
@@ -495,6 +496,7 @@ namespace WindowsPhoneGame1
         public float rotation = 0f;
         public Vector2 origin = Vector2.Zero;
         public float scale = 1f;
+        public Color color = Color.Pink;
     }
 
     public class TextArt
@@ -515,14 +517,17 @@ namespace WindowsPhoneGame1
             TextItem t1 = new TextItem();
             t1.text = SiloText;
             t1.textPosition = Vector2.Zero;
-
+            t1.color = Color.LimeGreen;
+            
             TextItem t2 = new TextItem();
             t2.text = SiloText;
-            t2.textPosition = new Vector2(0, textSize.X);
+            t2.textPosition = new Vector2(textSize.X, 0);
+            t2.color = Color.LimeGreen;
 
             TextItem t3 = new TextItem();
             t3.text = SiloText;
-            t3.textPosition = new Vector2(0, textSize.X * 2);
+            t3.textPosition = new Vector2(textSize.X * 2, 0);
+            t3.color = Color.LimeGreen;
 
             art.items.Add(t1);
             art.items.Add(t2);
@@ -567,6 +572,10 @@ namespace WindowsPhoneGame1
 
     public class Crater : TextItem
     {
+        public Crater()
+        {
+            this.color = Color.DarkGray;
+        }
     }
 
     public class Missile : TextItem
@@ -576,6 +585,11 @@ namespace WindowsPhoneGame1
         public float lapSpeed;
         public float tLap;
         public float origin;
+
+        public Missile()
+        {
+            this.color = Color.LightSlateGray;
+        }
     }
 
     public class Shockwave
@@ -588,6 +602,11 @@ namespace WindowsPhoneGame1
     {
         public float rotation;
         public float scale;
+
+        public Border()
+        {
+            this.color = Color.GhostWhite;
+        }
     }
 
 }
