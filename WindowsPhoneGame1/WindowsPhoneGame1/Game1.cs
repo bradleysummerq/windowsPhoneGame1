@@ -49,6 +49,8 @@ namespace WindowsPhoneGame1
         int leftCoordY = 480;
         int rightCoordY = 0;
 
+        public static Texture2D texture;
+
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
         List<Shockwave> m_shockwaves = new List<Shockwave>();
@@ -104,6 +106,7 @@ namespace WindowsPhoneGame1
             spriteBatch = new SpriteBatch(GraphicsDevice);
             texture1 = Content.Load<Texture2D>("GameThumbnail");
             texture2 = Content.Load<Texture2D>("GameThumbnail");
+            texture = Content.Load<Texture2D>("square");
 
             soundEffect = Content.Load<SoundEffect>("explosion");
             Rectangle clientBounds = this.Window.ClientBounds;
@@ -130,14 +133,12 @@ namespace WindowsPhoneGame1
             for (int i = 0; i < 9; i++)
             {
                 var b = new Border();
-                b.text = "border";
                 b.rotation = (float) -Math.PI/2;
                 b.scale = 1f;
                 b.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - 30 - i * borderSize.X);
                 m_borders.Add(b);
 
                 var bCol = new Border();
-                bCol.text = "border";
                 bCol.rotation = 0f;
                 bCol.scale = 1f;
                 bCol.textPosition = new Vector2(borderTopCoordinate + borderSize.Y, clientBounds.Right - 30 - i * borderSize.X);
@@ -146,27 +147,22 @@ namespace WindowsPhoneGame1
                 Border tHoriz = new Border();
                 Border tVert = new Border();
 
-                tHoriz.text = borderText;
                 tHoriz.rotation = (float) -Math.PI/2;
                 tHoriz.scale = 1f;
                 tHoriz.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - 30 - i * borderSize.X);
                 m_borders.Add(tHoriz);
 
-                tVert.text = borderText;
                 tVert.rotation = 0f;
                 tVert.scale = 1f;
                 tVert.textPosition = new Vector2(borderTopCoordinate + borderSize.Y, clientBounds.Right - 30 - i * borderSize.X);
                 m_borders.Add(tVert);
 
             }
+
             m_silo = new MissileSilo();
             m_silo.textPosition = new Vector2(clientBounds.Top, clientBounds.Right - 30);
-            m_silo.text = "Silo";
-
-
 
             var interceptorSite = new InterceptorSite();
-            interceptorSite.text = "Interceptor";
             interceptorSite.textPosition = new Vector2(clientBounds.Left, clientBounds.Bottom);
 
             m_interceptorSites.Add(interceptorSite);
@@ -226,11 +222,9 @@ namespace WindowsPhoneGame1
                 // figure out if the users touch intersects with any objects. 
                 m_StartClickOnObject = false;
                 Vector2 touchReleasePoint = touchState[0].Position;
-               
 
-
-                Rectangle touchRectangle = Vect2Rect( MapClickPointToMapCoordinates( touchReleasePoint) );
-                if ( m_silo.boundingBox().Intersects(touchRectangle) )
+                Rectangle touchRectangle = Vect2Rect(  touchReleasePoint );
+                if ( GetRectangleCoordinatesForTexture( m_silo ).Intersects(touchRectangle) )
                 {
                     m_StartClickOnObject = true;
                 }
@@ -306,7 +300,6 @@ namespace WindowsPhoneGame1
                 {
                     // the missile is at it's end point, we need to add a crater. 
                     Crater crater = new Crater();
-                    crater.text = "Crater";
                     crater.textPosition = m.textPosition;
 
                     m_craters.Add(crater);
@@ -407,11 +400,7 @@ namespace WindowsPhoneGame1
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //spriteBatch.Draw(texture1, spritePosition1, Color.White);
             spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
-            spriteBatch.DrawString(kootenay14, m_silo.text, MapGameToScreenCoordinates(m_silo.textPosition + GlobalDisplacement), Color.LightGreen);
-            foreach (TextItem t in m_silo.art.items)
-            {
-                spriteBatch.DrawString(kootenay14, t.text, MapGameToScreenCoordinates(t.textPosition + m_silo.textPosition), t.color, t.rotation, t.origin, t.scale, SpriteEffects.None, 0f);
-            }
+            spriteBatch.Draw(m_silo.texture, MapGameToScreenCoordinates(m_silo.textPosition + GlobalDisplacement), m_silo.color);
 
             Rectangle clientBounds = this.Window.ClientBounds;
             Vector2 stringDimensions = kootenay14.MeasureString("blah");
@@ -431,23 +420,23 @@ namespace WindowsPhoneGame1
             }
             foreach (Border b in m_borders)
             {
-                spriteBatch.DrawString(kootenay14, b.text, b.textPosition, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
+                spriteBatch.Draw(b.texture, b.textPosition, null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
             }
             foreach (Missile m in m_missiles)
             {       
-                spriteBatch.DrawString(kootenay14, "missile", MapGameToScreenCoordinates(m.textPosition), m.color, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0);
+                spriteBatch.Draw(m.texture, MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement), null, m.color, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0f);
             }
             foreach (Crater c in m_craters)
             {
-                spriteBatch.DrawString(kootenay14, c.text, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), c.color, (float)(-(Math.PI)/2f), Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.Draw(c.texture, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), null, c.color, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
             }
             foreach (InterceptorSite i in m_interceptorSites)
             {
-                spriteBatch.DrawString(kootenay14, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), i.color, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
             }
             foreach (Interceptor i in m_interceptors)
             {
-                spriteBatch.DrawString(kootenay14, i.text, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), i.color, 0, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
             }
 
             spriteBatch.End();
@@ -471,6 +460,28 @@ namespace WindowsPhoneGame1
             return new Rectangle((int)v.X, (int)v.Y, 1, 1);
         }
 
+        public Rectangle ApplyWorldTranslationToRectangle(Rectangle r)
+        {
+            return new Rectangle(
+                    (int)(r.X + m_translation.X),
+                    (int)(r.Y + m_translation.Y),
+                    r.Height,
+                    r.Width);
+        }
+
+        public Rectangle GetRectangleCoordinatesForTexture(TextureItem t)
+        {
+            return ApplyWorldTranslationToRectangle(
+                new Rectangle(
+                    (int)t.textPosition.X,
+                    (int)t.textPosition.Y,
+                    t.texture.Bounds.Height,
+                    t.texture.Bounds.Width
+                    )
+                );
+
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -482,6 +493,7 @@ namespace WindowsPhoneGame1
             return screenCoordinates;
         }
 
+
         public static Vector2 MapClickPointToMapCoordinates(Vector2 clickPoint)
         {
             Vector2 mapCoordinates = clickPoint - m_translation;
@@ -489,88 +501,39 @@ namespace WindowsPhoneGame1
         }
     }
 
-    public class TextItem
+    public class TextureItem
     {
-        public string text = "unassigned^&^*text";
         public Vector2 textPosition;
         public float rotation = 0f;
         public Vector2 origin = Vector2.Zero;
         public float scale = 1f;
         public Color color = Color.Pink;
+        public Texture2D texture = Game1.texture;
     }
 
     public class TextArt
     {
-        public List<TextItem> items = new List<TextItem>();
-
+        public List<TextureItem> items = new List<TextureItem>();
     }
 
-    public class MissileSilo : TextItem
+    public class MissileSilo : TextureItem
     {
         public TextArt art = new TextArt();
 
         public MissileSilo()
         {
-            string SiloText = "SILO";
-            Vector2 textSize = Game1.kootenay14.MeasureString(SiloText);
-            textSize.X = textSize.X - 25;
-            TextItem t1 = new TextItem();
-            t1.text = SiloText;
-            t1.textPosition = Vector2.Zero;
-            t1.color = Color.LimeGreen;
-            
-            TextItem t2 = new TextItem();
-            t2.text = SiloText;
-            t2.textPosition = new Vector2(textSize.X, 0);
-            t2.color = Color.LimeGreen;
-
-            TextItem t3 = new TextItem();
-            t3.text = SiloText;
-            t3.textPosition = new Vector2(textSize.X * 2, 0);
-            t3.color = Color.LimeGreen;
-
-            art.items.Add(t1);
-            art.items.Add(t2);
-            art.items.Add(t3);
-        }
-
-        public Rectangle boundingBox()
-        {
-           
-            TextItem initialItem = art.items[0];
-            Vector2 initialTextSize = Game1.kootenay14.MeasureString(initialItem.text);
-            Rectangle initialBox = new Rectangle(
-                (int)initialItem.textPosition.X, 
-                (int)initialItem.textPosition.Y, 
-                (int)initialTextSize.X, 
-                (int)initialTextSize.Y );
-
-            for (int i = 1; i < art.items.Count(); i++)
-            {
-                TextItem text = art.items[i];
-                Vector2 textSize = Game1.kootenay14.MeasureString(text.text);
-                Rectangle newRectangle = new Rectangle(
-                    (int)text.textPosition.X,
-                    (int)text.textPosition.Y,
-                    (int)textSize.X,
-                    (int)textSize.Y);
-                
-                initialBox = Rectangle.Union(newRectangle, initialBox);
-            }
-            
-            return new Rectangle( (int)(initialBox.X + textPosition.X), (int)(initialBox.Y + textPosition.Y), initialBox.Width, initialBox.Height );
         }
     }
 
-    public class InterceptorSite : TextItem
+    public class InterceptorSite : TextureItem
     {
     }
 
-    public class Interceptor : TextItem
+    public class Interceptor : TextureItem
     {
     }
 
-    public class Crater : TextItem
+    public class Crater : TextureItem
     {
         public Crater()
         {
@@ -578,7 +541,7 @@ namespace WindowsPhoneGame1
         }
     }
 
-    public class Missile : TextItem
+    public class Missile : TextureItem
     {
         public Vector2 pathVector;
         public Vector2 startPosition;
@@ -598,7 +561,7 @@ namespace WindowsPhoneGame1
         public double totalMsStartTime;
     }
 
-    public class Border : TextItem
+    public class Border : TextureItem
     {
         public float rotation;
         public float scale;
