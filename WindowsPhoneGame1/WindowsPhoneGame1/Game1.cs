@@ -30,7 +30,6 @@ namespace WindowsPhoneGame1
         int sprite2Height;
         int sprite2Width;
 
-
         const float SPEED = 120f / 1000; // pixels per millisecond
         const string TEXT = "Hello, Windows Phone!";
  
@@ -50,6 +49,11 @@ namespace WindowsPhoneGame1
         int rightCoordY = 0;
 
         public static Texture2D texture;
+        Texture2D squareTex;
+        Texture2D triangleTex;
+        Texture2D square;
+        Texture2D circleTex;
+        Texture2D whiteSquare;
 
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
@@ -107,6 +111,10 @@ namespace WindowsPhoneGame1
             texture1 = Content.Load<Texture2D>("GameThumbnail");
             texture2 = Content.Load<Texture2D>("GameThumbnail");
             texture = Content.Load<Texture2D>("square");
+            circleTex = Content.Load<Texture2D>("circle");
+            squareTex = Content.Load<Texture2D>("squared");
+            triangleTex = Content.Load<Texture2D>("triangle");
+            whiteSquare = Content.Load<Texture2D>("white2x2");
 
             soundEffect = Content.Load<SoundEffect>("explosion");
             Rectangle clientBounds = this.Window.ClientBounds;
@@ -124,40 +132,41 @@ namespace WindowsPhoneGame1
             Vector2 textSize = kootenay14.MeasureString(TEXT);
             startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top);
 
+            // putting border together (buttons at bottom of screen)
             m_borders = new List<Border>();
+            int numberOfSquaresHorizontal = clientBounds.Width / whiteSquare.Bounds.Width;
+            int borderVerticalColumnSize = 50 * whiteSquare.Bounds.Width;
+            int borderTopCoordinate = lowerCoordX - (int)whiteSquare.Bounds.Width - borderVerticalColumnSize;
 
-            string borderText = "-------------";
-            Vector2 borderSize = kootenay14.MeasureString(borderText);
-            int borderTopCoordinate = lowerCoordX - (int)borderSize.X - (int)borderSize.Y;
-
-            for (int i = 0; i < 9; i++)
+            // draw horizontal line
+            for (int i = 0; i < numberOfSquaresHorizontal; i++)
             {
                 var b = new Border();
-                b.rotation = (float) -Math.PI/2;
+                b.texture = whiteSquare;
+                
                 b.scale = 1f;
-                b.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - 30 - i * borderSize.X);
+                b.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - i * whiteSquare.Bounds.Width);
                 m_borders.Add(b);
-
-                var bCol = new Border();
-                bCol.rotation = 0f;
-                bCol.scale = 1f;
-                bCol.textPosition = new Vector2(borderTopCoordinate + borderSize.Y, clientBounds.Right - 30 - i * borderSize.X);
-                m_borders.Add(bCol);
-
-                Border tHoriz = new Border();
-                Border tVert = new Border();
-
-                tHoriz.rotation = (float) -Math.PI/2;
-                tHoriz.scale = 1f;
-                tHoriz.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - 30 - i * borderSize.X);
-                m_borders.Add(tHoriz);
-
-                tVert.rotation = 0f;
-                tVert.scale = 1f;
-                tVert.textPosition = new Vector2(borderTopCoordinate + borderSize.Y, clientBounds.Right - 30 - i * borderSize.X);
-                m_borders.Add(tVert);
-
             }
+
+            int numberOfVerticalColumns = 5;
+            int numberOfSquaresInVerticalColumn = borderVerticalColumnSize / whiteSquare.Bounds.Height;
+            int pixelSpacingBetweenColumns = leftCoordY / numberOfVerticalColumns;
+
+            // draw vertical lines 
+            for (int j = 0; j < numberOfVerticalColumns; j++)
+            {
+                for (int k = 0; k < numberOfSquaresInVerticalColumn; k++)
+                {
+                    Border b = new Border();
+                    b.texture = whiteSquare;
+                    b.scale = 1f;
+                    b.textPosition = new Vector2( borderTopCoordinate + (k * whiteSquare.Bounds.Height), leftCoordY - (j * pixelSpacingBetweenColumns));
+                    m_borders.Add(b);
+                }
+            }
+
+
 
             m_silo = new MissileSilo();
             m_silo.textPosition = new Vector2(clientBounds.Top, clientBounds.Right - 30);
@@ -563,13 +572,17 @@ namespace WindowsPhoneGame1
 
     public class Border : TextureItem
     {
-        public float rotation;
-        public float scale;
-
         public Border()
         {
             this.color = Color.GhostWhite;
         }
     }
 
+    /// <summary>
+    /// class to wrap the 'cells' that contain the  buildings which the user can deploy, drawn on the screen bottom.
+    /// </summary>
+    public class CellControl  
+    {
+        TextureItem itemContainedInCell;
+    }
 }
