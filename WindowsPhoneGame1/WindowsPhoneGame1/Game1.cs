@@ -159,19 +159,16 @@ namespace WindowsPhoneGame1
 
             // putting border together (buttons at bottom of screen)
             m_borders = new List<Border>();
-            int numberOfSquaresHorizontal = m_cells.Count;
-
             int squareDimensionInPixels = clientBounds.Width / m_cells.Count;
             int numberOfBordersAlongSquareLength = squareDimensionInPixels / whiteSquare.Bounds.Width;
-            int borderVerticalColumnSize = 50 * whiteSquare.Bounds.Width;
-            int borderTopCoordinate = lowerCoordX - (int)whiteSquare.Bounds.Width - borderVerticalColumnSize;
-            int numberOfVerticalColumns = numberOfSquaresHorizontal;
-            int numberOfSquaresInVerticalColumn = borderVerticalColumnSize / whiteSquare.Bounds.Height;
-            int pixelSpacingBetweenColumns = leftCoordY / numberOfVerticalColumns;
+            int borderTopCoordinate = lowerCoordX - (int)whiteSquare.Bounds.Width - squareDimensionInPixels;
+            int numberOfSquaresInVerticalColumn = squareDimensionInPixels / whiteSquare.Bounds.Height;
+            int pixelSpacingBetweenColumns = leftCoordY / m_cells.Count;
 
+            // populates cells/borders (for UI controls at bottom of screen)
             for(int cellIndex = 0; cellIndex < m_cells.Count; cellIndex++)
             {
-                m_cells[cellIndex].textPosition = new Vector2(borderTopCoordinate + borderVerticalColumnSize / 2, clientBounds.Right - (cellIndex * squareDimensionInPixels) - squareDimensionInPixels / 2);
+                m_cells[cellIndex].textPosition = new Vector2(borderTopCoordinate + squareDimensionInPixels / 2, clientBounds.Right - (cellIndex * squareDimensionInPixels) - squareDimensionInPixels / 2);
                 
                 // draw horizontal line
                 for (int i = 0; i < numberOfBordersAlongSquareLength; i++)
