@@ -65,8 +65,9 @@ namespace WindowsPhoneGame1
         List<Interceptor> m_interceptors = new List<Interceptor>();
         List<Border> m_borders = new List<Border>();
         List<CellControl> m_cells = new List<CellControl>();
-
         List<MissileSilo> m_silos;
+
+        Dictionary<Building,Texture2D> buildingToTextureMap = new Dictionary<Building,Texture2D>();
         bool m_IsKeyDown;
         bool m_StartClickOnObject;
         bool m_StartClickOnAddBuilding;
@@ -141,23 +142,29 @@ namespace WindowsPhoneGame1
             Vector2 textSize = kootenay14.MeasureString(TEXT);
             startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top);
 
+            buildingToTextureMap[Building.Silo] = siloTexture;
+            buildingToTextureMap[Building.Radar] = radarTexture;
+            buildingToTextureMap[Building.Interceptor] = interceptorTexture;
+
             m_cells = new List<CellControl>();
             
             CellControl silo = new CellControl();
-            silo.texture = siloTexture;
             silo.itemContainedInCell = Building.Silo;
             
             CellControl interceptor = new CellControl();
-            interceptor.texture = interceptorTexture;
             interceptor.itemContainedInCell = Building.Interceptor;
 
             CellControl radar = new CellControl();
-            radar.texture = radarTexture;
             radar.itemContainedInCell = Building.Radar;
 
             m_cells.Add(silo);
             m_cells.Add(interceptor);
             m_cells.Add(radar);
+
+            foreach(CellControl c in m_cells)
+            {
+                c.texture = buildingToTextureMap[c.itemContainedInCell];
+            }
 
             // putting border together (buttons at bottom of screen)
             m_borders = new List<Border>();
@@ -305,6 +312,7 @@ namespace WindowsPhoneGame1
                 && (m_previousTouchState[0].State == TouchLocationState.Moved || m_previousTouchState[0].State == TouchLocationState.Pressed) )
 
             {
+                m_StartClickOnAddBuilding = false;
                 // if we started our click on the silo, then launch a missile. 
                 if(m_StartClickOnObject)
                 {
@@ -338,6 +346,7 @@ namespace WindowsPhoneGame1
                 // if we started clicking on a building, then provide a building halo until it's placed. 
                 if(m_StartClickOnAddBuilding)
                 {
+                    
                 }
             }
             
@@ -514,6 +523,10 @@ namespace WindowsPhoneGame1
                 spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
             }
 
+            if(m_StartClickOnAddBuilding && m_previousTouchState.Count > 0)
+            {
+                spriteBatch.Draw(buildingToTextureMap[selectedBuilding], m_previousTouchState[0].Position, null, Color.Green, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
             spriteBatch.End();
 
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.Opaque);
