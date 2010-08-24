@@ -66,9 +66,11 @@ namespace WindowsPhoneGame1
         List<Border> m_borders = new List<Border>();
         List<CellControl> m_cells = new List<CellControl>();
 
-        MissileSilo m_silo;
+        List<MissileSilo> m_silos;
         bool m_IsKeyDown;
         bool m_StartClickOnObject;
+        bool m_StartClickOnAddBuilding;
+        Building selectedBuilding;
         bool m_IsKeyReleased;
         TouchCollection m_previousTouchState;
 
@@ -168,9 +170,18 @@ namespace WindowsPhoneGame1
             // populates cells/borders (for UI controls at bottom of screen)
             for(int cellIndex = 0; cellIndex < m_cells.Count; cellIndex++)
             {
+                // calculate the text positions for the building icon that is housed within this cell. 
                 m_cells[cellIndex].textPosition = new Vector2(borderTopCoordinate + squareDimensionInPixels / 2, clientBounds.Right - (cellIndex * squareDimensionInPixels) - squareDimensionInPixels / 2);
+
+                //calculate the bounding rectangle for this cell. 
+                m_cells[cellIndex].boundingRectangle = new Rectangle(
+                            borderTopCoordinate,
+                            clientBounds.Right - (cellIndex*squareDimensionInPixels),
+                            squareDimensionInPixels,
+                            squareDimensionInPixels
+                        );
                 
-                // draw horizontal line
+                // draw horizontal line for this cell
                 for (int i = 0; i < numberOfBordersAlongSquareLength; i++)
                 {
                     var b = new Border();
@@ -180,7 +191,7 @@ namespace WindowsPhoneGame1
                     m_borders.Add(b);
                 }
 
-                // draw vertical lines 
+                // draw vertical lines for this cell
                 for (int k = 0; k < numberOfSquaresInVerticalColumn; k++)
                 {
                     Border b = new Border();
@@ -191,9 +202,11 @@ namespace WindowsPhoneGame1
                 }
             }
 
-            m_silo = new MissileSilo();
-            m_silo.textPosition = new Vector2(clientBounds.Top, clientBounds.Right - 30);
-            m_silo.texture = siloTexture;
+            m_silos = new List<MissileSilo>();
+            MissileSilo initialSilo = new MissileSilo();
+            initialSilo.textPosition = new Vector2(clientBounds.Top, clientBounds.Right - 30);
+            initialSilo.texture = siloTexture;
+            m_silos.Add(initialSilo);
 
             var interceptorSite = new InterceptorSite();
             interceptorSite.textPosition = new Vector2(clientBounds.Left, clientBounds.Bottom);
@@ -208,6 +221,7 @@ namespace WindowsPhoneGame1
 
             m_IsKeyDown = false;
             m_StartClickOnObject = false;
+            m_StartClickOnAddBuilding = false; 
             m_IsKeyReleased = false;
             spritePosition1.X = 0;
             spritePosition1.Y = 0;
@@ -257,15 +271,27 @@ namespace WindowsPhoneGame1
                 Vector2 touchReleasePoint = touchState[0].Position;
 
                 Rectangle touchRectangle = Vect2Rect(  touchReleasePoint );
-                if ( GetRectangleCoordinatesForTexture( m_silo ).Intersects(touchRectangle) )
+                if ( GetRectangleCoordinatesForTexture( m_silos[0] ).Intersects(touchRectangle) )
                 {
                     m_StartClickOnObject = true;
+                }
+
+                foreach(CellControl c in m_cells)
+                {
+                    if( c.boundingRectangle.Intersects(touchRectangle) )
+                    {
+                        m_StartClickOnAddBuilding = true;
+                        selectedBuilding = c.itemContainedInCell;
+                    }
                 }
                 
                 // if not, then just move the map position. 
             }
+
+            // check to see if the user is just dragging an already existing touch. 
             if( touchState.Count > 0 
                 && !m_StartClickOnObject
+                && !m_StartClickOnAddBuilding
                 && touchState[0].State == TouchLocationState.Moved )
             {
 
@@ -279,31 +305,40 @@ namespace WindowsPhoneGame1
                 && (m_previousTouchState[0].State == TouchLocationState.Moved || m_previousTouchState[0].State == TouchLocationState.Pressed) )
 
             {
-
-                Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
-
-                var missile = new Missile();
-
-                Vector2 textSize = kootenay14.MeasureString(TEXT);
-
-                textSize = kootenay14.MeasureString("missile");
-                missile.startPosition = m_silo.textPosition;
-                missile.textPosition = missile.startPosition;
-                missile.pathVector = touchReleasePoint - missile.startPosition;
-                missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
-                missile.scale = 1;
-                float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
-
-                if (missile.pathVector.Y < 0)
+                // if we started our click on the silo, then launch a missile. 
+                if(m_StartClickOnObject)
                 {
-                    //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
-                    //a full 2*PI range. 
-                    rotation = -rotation;
+
+                    Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
+
+                    var missile = new Missile();
+
+                    Vector2 textSize = kootenay14.MeasureString(TEXT);
+
+                    textSize = kootenay14.MeasureString("missile");
+                    missile.startPosition = m_silos[0].textPosition;
+                    missile.textPosition = missile.startPosition;
+                    missile.pathVector = touchReleasePoint - missile.startPosition;
+                    missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
+                    missile.scale = 1;
+                    float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
+
+                    if (missile.pathVector.Y < 0)
+                    {
+                        //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
+                        //a full 2*PI range. 
+                        rotation = -rotation;
+                    }
+
+                    missile.rotation = rotation;
+                    m_missiles.Add(missile);
+                    m_missileLaunch.Play();
                 }
 
-                missile.rotation = rotation;
-                m_missiles.Add(missile);
-                m_missileLaunch.Play();
+                // if we started clicking on a building, then provide a building halo until it's placed. 
+                if(m_StartClickOnAddBuilding)
+                {
+                }
             }
             
             // Move the sprite around.
@@ -433,7 +468,10 @@ namespace WindowsPhoneGame1
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //spriteBatch.Draw(texture1, spritePosition1, Color.White);
             spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
-            spriteBatch.Draw(m_silo.texture, MapGameToScreenCoordinates(m_silo.textPosition + GlobalDisplacement), m_silo.color);
+            foreach(MissileSilo m in m_silos)
+            {
+                spriteBatch.Draw(m.texture, MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement), m.color);
+            }
 
             Rectangle clientBounds = this.Window.ClientBounds;
             Vector2 stringDimensions = kootenay14.MeasureString("blah");
@@ -612,6 +650,7 @@ namespace WindowsPhoneGame1
     public class CellControl : TextureItem 
     {
         public Building itemContainedInCell;
+        public Rectangle boundingRectangle;
     }
 
     public enum Building
@@ -619,6 +658,7 @@ namespace WindowsPhoneGame1
         Base,
         Silo,
         Interceptor,
-        Radar
+        Radar,
+        None
     }
 }
