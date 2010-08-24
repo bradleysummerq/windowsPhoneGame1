@@ -164,10 +164,7 @@ namespace WindowsPhoneGame1
             m_cells.Add(interceptor);
             m_cells.Add(radar);
 
-            foreach(CellControl c in m_cells)
-            {
-                c.texture = buildingToTextureMap[c.itemContainedInCell];
-            }
+
 
             // putting border together (buttons at bottom of screen)
             m_borders = new List<Border>();
@@ -177,6 +174,11 @@ namespace WindowsPhoneGame1
             int numberOfSquaresInVerticalColumn = squareDimensionInPixels / whiteSquare.Bounds.Height;
             int pixelSpacingBetweenColumns = leftCoordY / m_cells.Count;
 
+            foreach (CellControl c in m_cells)
+            {
+                c.texture = buildingToTextureMap[c.itemContainedInCell];
+                c.SquareDimensionInPixels = squareDimensionInPixels;
+            }
             // populates cells/borders (for UI controls at bottom of screen)
             for(int cellIndex = 0; cellIndex < m_cells.Count; cellIndex++)
             {
@@ -311,29 +313,36 @@ namespace WindowsPhoneGame1
             {
                 Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
 
-                m_StartClickOnAddBuilding = false;
-                if(selectedBuilding == Building.Radar)
+                // check to see if the release point is outside the bounds of the border control. 
+                // it it isn't, we won't actually add a building. 
+                if(touchReleasePoint.X < m_cells.Min( c => (lowerCoordX - c.SquareDimensionInPixels)))
                 {
-                    Radar r = new Radar();
-                    r.textPosition = touchReleasePoint;
-                    m_radar.Add(r);
-                    selectedBuilding = Building.None;
+                    if (selectedBuilding == Building.Radar)
+                    {
+                        Radar r = new Radar();
+                        r.textPosition = touchReleasePoint;
+                        m_radar.Add(r);
+                        selectedBuilding = Building.None;
+                    }
+
+                    else if (selectedBuilding == Building.InterceptorSite)
+                    {
+                        InterceptorSite i = new InterceptorSite();
+                        i.textPosition = touchReleasePoint;
+                        m_interceptorSites.Add(i);
+                        selectedBuilding = Building.None;
+                    }
+                    else if (selectedBuilding == Building.Silo)
+                    {
+                        MissileSilo ms = new MissileSilo();
+                        ms.textPosition = touchReleasePoint;
+                        m_silos.Add(ms);
+                        selectedBuilding = Building.None;
+                    }
                 }
 
-                else if(selectedBuilding == Building.InterceptorSite)
-                {
-                    InterceptorSite i = new InterceptorSite ();
-                    i.textPosition = touchReleasePoint;
-                    m_interceptorSites.Add(i);
-                    selectedBuilding = Building.None;
-                }
-                else if (selectedBuilding == Building.Silo)
-                {
-                    MissileSilo ms = new MissileSilo();
-                    ms.textPosition = touchReleasePoint;
-                    m_silos.Add(ms);
-                    selectedBuilding = Building.None;
-                }
+                m_StartClickOnAddBuilding = false;
+               
 
                 // if we started our click on the silo, then launch a missile. 
                 if(m_StartClickOnObject)
@@ -603,14 +612,20 @@ namespace WindowsPhoneGame1
             return screenCoordinates;
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clickPoint"></param>
+        /// <returns></returns>
         public static Vector2 MapClickPointToMapCoordinates(Vector2 clickPoint)
         {
             Vector2 mapCoordinates = clickPoint - m_translation;
             return mapCoordinates;
         }
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class TextureItem
     {
         public Vector2 textPosition;
@@ -620,12 +635,16 @@ namespace WindowsPhoneGame1
         public Color color = Color.Pink;
         public Texture2D texture = Game1.texture;
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class TextArt
     {
         public List<TextureItem> items = new List<TextureItem>();
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class MissileSilo : TextureItem
     {
         public TextArt art = new TextArt();
@@ -637,11 +656,15 @@ namespace WindowsPhoneGame1
         }
     }
 
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class Interceptor : TextureItem
     {
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class InterceptorSite : TextureItem
     {
         public InterceptorSite()
@@ -650,7 +673,9 @@ namespace WindowsPhoneGame1
             this.texture = Game1.interceptorTexture;
         }
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class Radar : TextureItem
     {
         public Radar()
@@ -660,6 +685,9 @@ namespace WindowsPhoneGame1
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class Crater : TextureItem
     {
         public Crater()
@@ -668,6 +696,9 @@ namespace WindowsPhoneGame1
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class Missile : TextureItem
     {
         public Vector2 pathVector;
@@ -682,12 +713,18 @@ namespace WindowsPhoneGame1
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class Shockwave
     {
         public Vector2 m_displacement;
         public double totalMsStartTime;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class Border : TextureItem
     {
         public Border()
@@ -703,8 +740,13 @@ namespace WindowsPhoneGame1
     {
         public Building itemContainedInCell;
         public Rectangle boundingRectangle;
+        public int SquareDimensionInPixels;
+
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public enum Building
     {
         Base,
