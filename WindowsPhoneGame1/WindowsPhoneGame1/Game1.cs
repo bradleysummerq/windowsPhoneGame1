@@ -48,6 +48,12 @@ namespace WindowsPhoneGame1
         int leftCoordY = 480;
         int rightCoordY = 0;
 
+        /// <summary>
+        /// used to store the times of touch releases, so that 
+        /// things like double click/touch can be determined. 
+        /// </summary>
+        List<float> touchReleaseTimeInMs = new List<float>();
+
         public static Texture2D texture;
         Texture2D squareTex;
         Texture2D triangleTex;
@@ -300,22 +306,57 @@ namespace WindowsPhoneGame1
                 && !m_StartClickOnAddBuilding
                 && touchState[0].State == TouchLocationState.Moved )
             {
-
                 m_translation += touchState[0].Position - m_previousTouchState[0].Position;
             }
 
             // check to see if the user has released an existing touch.
             if( touchState.Count > 0 
-                && (m_StartClickOnObject || m_StartClickOnAddBuilding)
                 && touchState[0].State == TouchLocationState.Released 
                 && (m_previousTouchState[0].State == TouchLocationState.Moved || m_previousTouchState[0].State == TouchLocationState.Pressed) )
 
             {
+
+                touchReleaseTimeInMs.Add((float)gameTime.TotalGameTime.TotalMilliseconds);
+
                 Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
+                float timeSinceLastTouchRelease = float.MaxValue;
+
+                if (touchReleaseTimeInMs.Count() > 1)
+                {
+                    int finalIndex = touchReleaseTimeInMs.Count - 1;
+                    timeSinceLastTouchRelease = (float)touchReleaseTimeInMs[finalIndex] - touchReleaseTimeInMs[finalIndex - 1];
+                }
+
+
+                if( timeSinceLastTouchRelease < 1000 && !m_StartClickOnAddBuilding)
+                {
+                    var missile = new Missile();
+
+                    Vector2 textSize = kootenay14.MeasureString(TEXT);
+
+                    textSize = kootenay14.MeasureString("missile");
+                    missile.startPosition = m_silos[0].textPosition;
+                    missile.textPosition = missile.startPosition;
+                    missile.pathVector = touchReleasePoint - missile.startPosition;
+                    missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
+                    missile.scale = 1;
+                    float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
+
+                    if (missile.pathVector.Y < 0)
+                    {
+                        //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
+                        //a full 2*PI range. 
+                        rotation = -rotation;
+                    }
+
+                    missile.rotation = rotation;
+                    m_missiles.Add(missile);
+                    m_missileLaunch.Play();
+                }
 
                 // check to see if the release point is outside the bounds of the border control. 
                 // it it isn't, we won't actually add a building. 
-                if(touchReleasePoint.X < m_cells.Min( c => (lowerCoordX - c.SquareDimensionInPixels)))
+                if(touchReleasePoint.X < m_cells.Min( c => (lowerCoordX - c.SquareDimensionInPixels)) && m_StartClickOnAddBuilding)
                 {
                     if (selectedBuilding == Building.Radar)
                     {
@@ -344,39 +385,6 @@ namespace WindowsPhoneGame1
                 m_StartClickOnAddBuilding = false;
                
 
-                // if we started our click on the silo, then launch a missile. 
-                if(m_StartClickOnObject)
-                {
-
-                    var missile = new Missile();
-
-                    Vector2 textSize = kootenay14.MeasureString(TEXT);
-
-                    textSize = kootenay14.MeasureString("missile");
-                    missile.startPosition = m_silos[0].textPosition;
-                    missile.textPosition = missile.startPosition;
-                    missile.pathVector = touchReleasePoint - missile.startPosition;
-                    missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
-                    missile.scale = 1;
-                    float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
-
-                    if (missile.pathVector.Y < 0)
-                    {
-                        //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
-                        //a full 2*PI range. 
-                        rotation = -rotation;
-                    }
-
-                    missile.rotation = rotation;
-                    m_missiles.Add(missile);
-                    m_missileLaunch.Play();
-                }
-
-                // if we started clicking on a building, then provide a building halo until it's placed. 
-                if(m_StartClickOnAddBuilding)
-                {
-                    
-                }
             }
             
             // Move the sprite around.
