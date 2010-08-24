@@ -54,9 +54,9 @@ namespace WindowsPhoneGame1
         Texture2D square;
         Texture2D circleTex;
         Texture2D whiteSquare;
-        Texture2D siloTexture;
-        Texture2D radarTexture;
-        Texture2D interceptorTexture;
+        public static Texture2D siloTexture;
+        public static Texture2D radarTexture;
+        public static Texture2D interceptorTexture;
 
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
@@ -65,7 +65,9 @@ namespace WindowsPhoneGame1
         List<Interceptor> m_interceptors = new List<Interceptor>();
         List<Border> m_borders = new List<Border>();
         List<CellControl> m_cells = new List<CellControl>();
-        List<MissileSilo> m_silos;
+
+        List<Radar> m_radar = new List<Radar>();
+        List<MissileSilo> m_silos = new List<MissileSilo>();
 
         Dictionary<Building,Texture2D> buildingToTextureMap = new Dictionary<Building,Texture2D>();
         bool m_IsKeyDown;
@@ -142,9 +144,10 @@ namespace WindowsPhoneGame1
             Vector2 textSize = kootenay14.MeasureString(TEXT);
             startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top);
 
+            buildingToTextureMap[Building.None] = null;
             buildingToTextureMap[Building.Silo] = siloTexture;
             buildingToTextureMap[Building.Radar] = radarTexture;
-            buildingToTextureMap[Building.Interceptor] = interceptorTexture;
+            buildingToTextureMap[Building.InterceptorSite] = interceptorTexture;
 
             m_cells = new List<CellControl>();
             
@@ -152,7 +155,7 @@ namespace WindowsPhoneGame1
             silo.itemContainedInCell = Building.Silo;
             
             CellControl interceptor = new CellControl();
-            interceptor.itemContainedInCell = Building.Interceptor;
+            interceptor.itemContainedInCell = Building.InterceptorSite;
 
             CellControl radar = new CellControl();
             radar.itemContainedInCell = Building.Radar;
@@ -183,7 +186,7 @@ namespace WindowsPhoneGame1
                 //calculate the bounding rectangle for this cell. 
                 m_cells[cellIndex].boundingRectangle = new Rectangle(
                             borderTopCoordinate,
-                            clientBounds.Right - (cellIndex*squareDimensionInPixels),
+                            clientBounds.Right - ((cellIndex + 1)*squareDimensionInPixels),
                             squareDimensionInPixels,
                             squareDimensionInPixels
                         );
@@ -212,13 +215,7 @@ namespace WindowsPhoneGame1
             m_silos = new List<MissileSilo>();
             MissileSilo initialSilo = new MissileSilo();
             initialSilo.textPosition = new Vector2(clientBounds.Top, clientBounds.Right - 30);
-            initialSilo.texture = siloTexture;
             m_silos.Add(initialSilo);
-
-            var interceptorSite = new InterceptorSite();
-            interceptorSite.textPosition = new Vector2(clientBounds.Left, clientBounds.Bottom);
-
-            m_interceptorSites.Add(interceptorSite);
 
             Vector2 endPosition = new Vector2(clientBounds.Left, clientBounds.Bottom - textSize.Y);
             pathVector = endPosition - startPosition;
@@ -307,16 +304,38 @@ namespace WindowsPhoneGame1
 
             // check to see if the user has released an existing touch.
             if( touchState.Count > 0 
-                && m_StartClickOnObject
+                && (m_StartClickOnObject || m_StartClickOnAddBuilding)
                 && touchState[0].State == TouchLocationState.Released 
                 && (m_previousTouchState[0].State == TouchLocationState.Moved || m_previousTouchState[0].State == TouchLocationState.Pressed) )
 
             {
                 m_StartClickOnAddBuilding = false;
+                if(selectedBuilding == Building.Radar)
+                {
+                    Radar r = new Radar();
+                    r.textPosition = m_previousTouchState[0].Position;
+                    m_radar.Add(r);
+                    selectedBuilding = Building.None;
+                }
+
+                else if(selectedBuilding == Building.InterceptorSite)
+                {
+                    InterceptorSite i = new InterceptorSite ();
+                    i.textPosition = m_previousTouchState[0].Position;
+                    m_interceptorSites.Add(i);
+                    selectedBuilding = Building.None;
+                }
+                else if (selectedBuilding == Building.Silo)
+                {
+                    MissileSilo ms = new MissileSilo();
+                    ms.textPosition = m_previousTouchState[0].Position;
+                    m_silos.Add(ms);
+                    selectedBuilding = Building.None;
+                }
+
                 // if we started our click on the silo, then launch a missile. 
                 if(m_StartClickOnObject)
                 {
-
                     Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
 
                     var missile = new Missile();
@@ -514,6 +533,10 @@ namespace WindowsPhoneGame1
             {
                 spriteBatch.Draw(c.texture, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), null, c.color, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
             }
+            foreach(Radar r in m_radar)
+            {
+                spriteBatch.Draw(r.texture, MapGameToScreenCoordinates(r.textPosition + GlobalDisplacement), null, r.color, r.rotation, Vector2.Zero, r.scale, SpriteEffects.None, 0f);
+            }
             foreach (InterceptorSite i in m_interceptorSites)
             {
                 spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
@@ -522,7 +545,6 @@ namespace WindowsPhoneGame1
             {
                 spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
             }
-
             if(m_StartClickOnAddBuilding && m_previousTouchState.Count > 0)
             {
                 spriteBatch.Draw(buildingToTextureMap[selectedBuilding], m_previousTouchState[0].Position, null, Color.Green, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
@@ -567,7 +589,6 @@ namespace WindowsPhoneGame1
                     t.texture.Bounds.Width
                     )
                 );
-
         }
 
         /// <summary>
@@ -610,15 +631,32 @@ namespace WindowsPhoneGame1
 
         public MissileSilo()
         {
+            this.color = Color.Red;
+            this.texture = Game1.siloTexture;
         }
+    }
+
+
+    public class Interceptor : TextureItem
+    {
     }
 
     public class InterceptorSite : TextureItem
     {
+        public InterceptorSite()
+        {
+            this.color = Color.LimeGreen;
+            this.texture = Game1.interceptorTexture;
+        }
     }
 
-    public class Interceptor : TextureItem
+    public class Radar : TextureItem
     {
+        public Radar()
+        {
+            this.color = Color.Blue;
+            this.texture = Game1.radarTexture;           
+        }
     }
 
     public class Crater : TextureItem
@@ -670,7 +708,7 @@ namespace WindowsPhoneGame1
     {
         Base,
         Silo,
-        Interceptor,
+        InterceptorSite,
         Radar,
         None
     }
