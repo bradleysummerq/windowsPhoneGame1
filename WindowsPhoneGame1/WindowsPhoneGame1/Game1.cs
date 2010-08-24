@@ -63,6 +63,7 @@ namespace WindowsPhoneGame1
         public static Texture2D siloTexture;
         public static Texture2D radarTexture;
         public static Texture2D interceptorTexture;
+        public static Texture2D bugTexture;
 
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
@@ -71,9 +72,9 @@ namespace WindowsPhoneGame1
         List<Interceptor> m_interceptors = new List<Interceptor>();
         List<Border> m_borders = new List<Border>();
         List<CellControl> m_cells = new List<CellControl>();
-
         List<Radar> m_radar = new List<Radar>();
         List<MissileSilo> m_silos = new List<MissileSilo>();
+        List<Bug> m_bugs= new List<Bug>();
 
         Dictionary<Building,Texture2D> buildingToTextureMap = new Dictionary<Building,Texture2D>();
         bool m_IsKeyDown;
@@ -133,12 +134,25 @@ namespace WindowsPhoneGame1
             siloTexture = triangleTex;
             radarTexture = circleTex;
             interceptorTexture = squareTex;
+            bugTexture = circleTex;
 
             soundEffect = Content.Load<SoundEffect>("explosion");
             Rectangle clientBounds = this.Window.ClientBounds;
 
             debugOutput.Add("x:");
             debugOutput.Add("y:");
+            Random r = new Random();
+            for(int i = 0; i < 50; i++)
+            {
+                
+                int rx = r.Next(-600, 600 );
+                int ry = r.Next(-300, 300 );
+                float rRotation = (float)r.NextDouble() * 3f;
+                Bug b = new Bug();
+                b.rotation = rRotation;
+                b.textPosition = new Vector2(rx, ry);
+                m_bugs.Add(b);
+            }
 
             m_translation = Vector2.Zero;
             m_missileLaunch = Content.Load<SoundEffect>("missile");
@@ -423,6 +437,18 @@ namespace WindowsPhoneGame1
                     shock.totalMsStartTime = gameTime.TotalGameTime.TotalMilliseconds;
                     shock.m_displacement = new Vector2(10f);
                     m_shockwaves.Add(shock);
+
+                    var bugCraterDistance = m_bugs.Select(b => new { bugText = b.textPosition, craterText = crater.textPosition, distance = (b.textPosition - crater.textPosition).LengthSquared() }).ToList();
+
+                    //check to see if the missile hit any bad guys
+                    List<Bug> bugsToRemove = m_bugs.Where(b => (b.textPosition - crater.textPosition).LengthSquared() < 1000).ToList();
+                    if (bugsToRemove.Count() > 0)
+                    {
+                        foreach (Bug b in bugsToRemove)
+                        {
+                            m_bugs.Remove(b);
+                        }
+                    }
                 }
 
                 m.textPosition = m.startPosition + m.pathVector * pLap;
@@ -563,6 +589,10 @@ namespace WindowsPhoneGame1
             {
                 spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
             }
+            foreach(Bug b in m_bugs)
+            {
+                spriteBatch.Draw(b.texture, MapGameToScreenCoordinates(b.textPosition + GlobalDisplacement), null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
+            }
             if(m_StartClickOnAddBuilding && m_previousTouchState.Count > 0)
             {
                 spriteBatch.Draw(buildingToTextureMap[selectedBuilding], m_previousTouchState[0].Position, null, Color.Green, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
@@ -690,6 +720,15 @@ namespace WindowsPhoneGame1
         {
             this.color = Color.Blue;
             this.texture = Game1.radarTexture;           
+        }
+    }
+
+    public class Bug : TextureItem
+    {
+        public Bug()
+        {
+            this.color = Color.LightYellow;
+            this.texture = Game1.bugTexture;
         }
     }
 
