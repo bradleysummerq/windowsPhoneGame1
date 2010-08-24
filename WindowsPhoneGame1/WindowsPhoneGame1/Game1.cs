@@ -54,6 +54,9 @@ namespace WindowsPhoneGame1
         Texture2D square;
         Texture2D circleTex;
         Texture2D whiteSquare;
+        Texture2D siloTexture;
+        Texture2D radarTexture;
+        Texture2D interceptorTexture;
 
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
@@ -61,6 +64,7 @@ namespace WindowsPhoneGame1
         List<InterceptorSite> m_interceptorSites = new List<InterceptorSite>();
         List<Interceptor> m_interceptors = new List<Interceptor>();
         List<Border> m_borders = new List<Border>();
+        List<CellControl> m_cells = new List<CellControl>();
 
         MissileSilo m_silo;
         bool m_IsKeyDown;
@@ -115,6 +119,9 @@ namespace WindowsPhoneGame1
             squareTex = Content.Load<Texture2D>("squared");
             triangleTex = Content.Load<Texture2D>("triangle");
             whiteSquare = Content.Load<Texture2D>("white2x2");
+            siloTexture = triangleTex;
+            radarTexture = circleTex;
+            interceptorTexture = squareTex;
 
             soundEffect = Content.Load<SoundEffect>("explosion");
             Rectangle clientBounds = this.Window.ClientBounds;
@@ -132,44 +139,64 @@ namespace WindowsPhoneGame1
             Vector2 textSize = kootenay14.MeasureString(TEXT);
             startPosition = new Vector2(clientBounds.Right - textSize.X, clientBounds.Top);
 
+            m_cells = new List<CellControl>();
+            
+            CellControl silo = new CellControl();
+            silo.texture = siloTexture;
+            silo.itemContainedInCell = Building.Silo;
+            
+            CellControl interceptor = new CellControl();
+            interceptor.texture = interceptorTexture;
+            interceptor.itemContainedInCell = Building.Interceptor;
+
+            CellControl radar = new CellControl();
+            radar.texture = radarTexture;
+            radar.itemContainedInCell = Building.Radar;
+
+            m_cells.Add(silo);
+            m_cells.Add(interceptor);
+            m_cells.Add(radar);
+
             // putting border together (buttons at bottom of screen)
             m_borders = new List<Border>();
-            int numberOfSquaresHorizontal = clientBounds.Width / whiteSquare.Bounds.Width;
+            int numberOfSquaresHorizontal = m_cells.Count;
+
+            int squareDimensionInPixels = clientBounds.Width / m_cells.Count;
+            int numberOfBordersAlongSquareLength = squareDimensionInPixels / whiteSquare.Bounds.Width;
             int borderVerticalColumnSize = 50 * whiteSquare.Bounds.Width;
             int borderTopCoordinate = lowerCoordX - (int)whiteSquare.Bounds.Width - borderVerticalColumnSize;
-
-            // draw horizontal line
-            for (int i = 0; i < numberOfSquaresHorizontal; i++)
-            {
-                var b = new Border();
-                b.texture = whiteSquare;
-                
-                b.scale = 1f;
-                b.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - i * whiteSquare.Bounds.Width);
-                m_borders.Add(b);
-            }
-
-            int numberOfVerticalColumns = 5;
+            int numberOfVerticalColumns = numberOfSquaresHorizontal;
             int numberOfSquaresInVerticalColumn = borderVerticalColumnSize / whiteSquare.Bounds.Height;
             int pixelSpacingBetweenColumns = leftCoordY / numberOfVerticalColumns;
 
-            // draw vertical lines 
-            for (int j = 0; j < numberOfVerticalColumns; j++)
+            for(int cellIndex = 0; cellIndex < m_cells.Count; cellIndex++)
             {
+                m_cells[cellIndex].textPosition = new Vector2(borderTopCoordinate + borderVerticalColumnSize / 2, clientBounds.Right - (cellIndex * squareDimensionInPixels) - squareDimensionInPixels / 2);
+                
+                // draw horizontal line
+                for (int i = 0; i < numberOfBordersAlongSquareLength; i++)
+                {
+                    var b = new Border();
+                    b.texture = whiteSquare;    
+                    b.scale = 1f;
+                    b.textPosition = new Vector2(borderTopCoordinate, clientBounds.Right - (i * whiteSquare.Bounds.Width + squareDimensionInPixels*cellIndex)  );
+                    m_borders.Add(b);
+                }
+
+                // draw vertical lines 
                 for (int k = 0; k < numberOfSquaresInVerticalColumn; k++)
                 {
                     Border b = new Border();
                     b.texture = whiteSquare;
                     b.scale = 1f;
-                    b.textPosition = new Vector2( borderTopCoordinate + (k * whiteSquare.Bounds.Height), leftCoordY - (j * pixelSpacingBetweenColumns));
+                    b.textPosition = new Vector2( borderTopCoordinate + (k * whiteSquare.Bounds.Height), leftCoordY - (cellIndex * pixelSpacingBetweenColumns) );
                     m_borders.Add(b);
                 }
             }
 
-
-
             m_silo = new MissileSilo();
             m_silo.textPosition = new Vector2(clientBounds.Top, clientBounds.Right - 30);
+            m_silo.texture = siloTexture;
 
             var interceptorSite = new InterceptorSite();
             interceptorSite.textPosition = new Vector2(clientBounds.Left, clientBounds.Bottom);
@@ -427,6 +454,10 @@ namespace WindowsPhoneGame1
                         SpriteEffects.None, 
                         0f);
             }
+            foreach (CellControl c in m_cells)
+            {
+                spriteBatch.Draw(c.texture, c.textPosition, null, Color.White, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
+            }
             foreach (Border b in m_borders)
             {
                 spriteBatch.Draw(b.texture, b.textPosition, null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
@@ -581,8 +612,16 @@ namespace WindowsPhoneGame1
     /// <summary>
     /// class to wrap the 'cells' that contain the  buildings which the user can deploy, drawn on the screen bottom.
     /// </summary>
-    public class CellControl  
+    public class CellControl : TextureItem 
     {
-        TextureItem itemContainedInCell;
+        public Building itemContainedInCell;
+    }
+
+    public enum Building
+    {
+        Base,
+        Silo,
+        Interceptor,
+        Radar
     }
 }
