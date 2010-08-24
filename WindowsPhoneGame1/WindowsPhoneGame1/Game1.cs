@@ -309,11 +309,13 @@ namespace WindowsPhoneGame1
                 && (m_previousTouchState[0].State == TouchLocationState.Moved || m_previousTouchState[0].State == TouchLocationState.Pressed) )
 
             {
+                Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
+
                 m_StartClickOnAddBuilding = false;
                 if(selectedBuilding == Building.Radar)
                 {
                     Radar r = new Radar();
-                    r.textPosition = m_previousTouchState[0].Position;
+                    r.textPosition = touchReleasePoint;
                     m_radar.Add(r);
                     selectedBuilding = Building.None;
                 }
@@ -321,14 +323,14 @@ namespace WindowsPhoneGame1
                 else if(selectedBuilding == Building.InterceptorSite)
                 {
                     InterceptorSite i = new InterceptorSite ();
-                    i.textPosition = m_previousTouchState[0].Position;
+                    i.textPosition = touchReleasePoint;
                     m_interceptorSites.Add(i);
                     selectedBuilding = Building.None;
                 }
                 else if (selectedBuilding == Building.Silo)
                 {
                     MissileSilo ms = new MissileSilo();
-                    ms.textPosition = m_previousTouchState[0].Position;
+                    ms.textPosition = touchReleasePoint;
                     m_silos.Add(ms);
                     selectedBuilding = Building.None;
                 }
@@ -336,7 +338,6 @@ namespace WindowsPhoneGame1
                 // if we started our click on the silo, then launch a missile. 
                 if(m_StartClickOnObject)
                 {
-                    Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
 
                     var missile = new Missile();
 
