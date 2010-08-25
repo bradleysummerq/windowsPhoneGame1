@@ -64,6 +64,7 @@ namespace WindowsPhoneGame1
         public static Texture2D radarTexture;
         public static Texture2D interceptorTexture;
         public static Texture2D bugTexture;
+        public static Texture2D CatnipTexture;
         public Texture2D missileTexture;
 
         List<Crater> m_craters = new List<Crater>();
@@ -76,6 +77,7 @@ namespace WindowsPhoneGame1
         List<Radar> m_radar = new List<Radar>();
         List<MissileSilo> m_silos = new List<MissileSilo>();
         List<Bug> m_bugs= new List<Bug>();
+        List<Catnip> m_catnip = new List<Catnip>();
 
         Dictionary<Building,Texture2D> buildingToTextureMap = new Dictionary<Building,Texture2D>();
         bool m_IsKeyDown;
@@ -137,6 +139,7 @@ namespace WindowsPhoneGame1
             radarTexture = circleTex;
             interceptorTexture = squareTex;
             bugTexture = circleTex;
+            CatnipTexture = triangleTex;
             missileTexture = Content.Load<Texture2D>("missileTexture");
             
             
@@ -155,6 +158,17 @@ namespace WindowsPhoneGame1
                 b.rotation = rRotation;
                 b.textPosition = new Vector2(rx, ry);
                 m_bugs.Add(b);
+            }
+
+            for(int i = 0; i < 10; i++)
+            {                
+                int rx = r.Next(-600, 600 );
+                int ry = r.Next(-300, 300 );
+                float rRotation = (float)r.NextDouble() * 3f;
+                Catnip c = new Catnip();
+                c.rotation = rRotation;
+                c.textPosition = new Vector2(rx, ry);
+                m_catnip.Add(c);
             }
 
             m_translation = Vector2.Zero;
@@ -669,6 +683,10 @@ namespace WindowsPhoneGame1
             {
                 spriteBatch.Draw(b.texture, MapGameToScreenCoordinates(b.textPosition + GlobalDisplacement), null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
             }
+            foreach(Catnip c in m_catnip)
+            {
+                spriteBatch.Draw(c.texture, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), null, c.color, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
+            }
             if(m_StartClickOnAddBuilding && m_previousTouchState.Count > 0)
             {
                 spriteBatch.Draw(buildingToTextureMap[selectedBuilding], m_previousTouchState[0].Position, null, Color.Green, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
@@ -815,6 +833,15 @@ namespace WindowsPhoneGame1
         {
             this.color = Color.LightYellow;
             this.texture = Game1.bugTexture;
+        }
+    }
+
+    public class Catnip : TextureItem
+    {
+        public Catnip()
+        {
+            this.color = Color.DarkOliveGreen;
+            this.texture = Game1.CatnipTexture;
         }
     }
 
