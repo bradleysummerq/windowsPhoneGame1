@@ -64,6 +64,7 @@ namespace WindowsPhoneGame1
         public static Texture2D radarTexture;
         public static Texture2D interceptorTexture;
         public static Texture2D bugTexture;
+        public Texture2D missileTexture;
 
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
@@ -135,6 +136,7 @@ namespace WindowsPhoneGame1
             radarTexture = circleTex;
             interceptorTexture = squareTex;
             bugTexture = circleTex;
+            missileTexture = Content.Load<Texture2D>("missileTexture");
 
             soundEffect = Content.Load<SoundEffect>("explosion");
             Rectangle clientBounds = this.Window.ClientBounds;
@@ -142,7 +144,7 @@ namespace WindowsPhoneGame1
             debugOutput.Add("x:");
             debugOutput.Add("y:");
             Random r = new Random();
-            for(int i = 0; i < 50; i++)
+            for(int i = 0; i < 10; i++)
             {
                 
                 int rx = r.Next(-600, 600 );
@@ -350,7 +352,10 @@ namespace WindowsPhoneGame1
 
                     textSize = kootenay14.MeasureString("missile");
                     missile.startPosition = m_silos[0].textPosition;
+                    m_silos[0].timeTillNextLaunchMs.TimeLeftInMs = 5000f;
+                    m_silos[0].timeTillNextLaunchMs.TotalTimeInMs = 5000f;
                     missile.textPosition = missile.startPosition;
+                    missile.texture = missileTexture;
                     missile.pathVector = touchReleasePoint - missile.startPosition;
                     missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
                     missile.scale = 1;
@@ -379,7 +384,6 @@ namespace WindowsPhoneGame1
                         m_radar.Add(r);
                         selectedBuilding = Building.None;
                     }
-
                     else if (selectedBuilding == Building.InterceptorSite)
                     {
                         InterceptorSite i = new InterceptorSite();
@@ -397,8 +401,16 @@ namespace WindowsPhoneGame1
                 }
 
                 m_StartClickOnAddBuilding = false;
-               
+            }
 
+            foreach(MissileSilo m in m_silos)
+            {
+                if(m.timeTillNextLaunchMs.TimeLeftInMs > 0)
+                {
+                    m.timeTillNextLaunchMs.TimeLeftInMs = (float)Math.Max(
+                        m.timeTillNextLaunchMs.TimeLeftInMs - gameTime.ElapsedGameTime.TotalMilliseconds,
+                        0f);
+                }
             }
             
             // Move the sprite around.
@@ -437,8 +449,6 @@ namespace WindowsPhoneGame1
                     shock.totalMsStartTime = gameTime.TotalGameTime.TotalMilliseconds;
                     shock.m_displacement = new Vector2(10f);
                     m_shockwaves.Add(shock);
-
-                    var bugCraterDistance = m_bugs.Select(b => new { bugText = b.textPosition, craterText = crater.textPosition, distance = (b.textPosition - crater.textPosition).LengthSquared() }).ToList();
 
                     //check to see if the missile hit any bad guys
                     List<Bug> bugsToRemove = m_bugs.Where(b => (b.textPosition - crater.textPosition).LengthSquared() < 1000).ToList();
@@ -543,6 +553,25 @@ namespace WindowsPhoneGame1
             foreach(MissileSilo m in m_silos)
             {
                 spriteBatch.Draw(m.texture, MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement), m.color);
+                if (m.timeTillNextLaunchMs.TimeLeftInMs > 0)
+                {
+                    float pixelsProgressed = m.timeTillNextLaunchMs.TotalTimeInMs - m.timeTillNextLaunchMs.TimeLeftInMs;
+                   
+                    for (int i = 0; i < m.timeTillNextLaunchMs.TotalTimeInMs; i++)
+                    {
+                        Color c;
+                        if( i < pixelsProgressed)
+                        {
+                            c = Color.LightGray;
+                        }
+                        else
+                        {
+                            c = Color.DarkGray;
+                        }
+                        Vector2 position = new Vector2(m.textPosition.X, m.textPosition.Y - i);
+                        spriteBatch.Draw(whiteSquare, position, null, c, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                    }
+                }
             }
 
             Rectangle clientBounds = this.Window.ClientBounds;
@@ -661,6 +690,14 @@ namespace WindowsPhoneGame1
             return mapCoordinates;
         }
     }
+
+
+    public class TimedThing
+    {
+        public float TimeLeftInMs;
+        public float TotalTimeInMs;
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -686,11 +723,13 @@ namespace WindowsPhoneGame1
     public class MissileSilo : TextureItem
     {
         public TextArt art = new TextArt();
+        public TimedThing timeTillNextLaunchMs;
 
         public MissileSilo()
         {
             this.color = Color.Red;
             this.texture = Game1.siloTexture;
+            timeTillNextLaunchMs = new TimedThing();
         }
     }
 
@@ -788,7 +827,6 @@ namespace WindowsPhoneGame1
         public Building itemContainedInCell;
         public Rectangle boundingRectangle;
         public int SquareDimensionInPixels;
-
     }
 
     /// <summary>
