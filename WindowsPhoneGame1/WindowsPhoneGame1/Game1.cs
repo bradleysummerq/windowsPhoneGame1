@@ -347,7 +347,7 @@ namespace WindowsPhoneGame1
                 }
 
 
-                if( timeSinceLastTouchRelease < 5000 && !m_StartClickOnAddBuilding)
+                if( timeSinceLastTouchRelease < 500 && !m_StartClickOnAddBuilding)
                 {
                     var missile = new Missile();
 
