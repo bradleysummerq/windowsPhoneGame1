@@ -363,6 +363,7 @@ namespace WindowsPhoneGame1
                     missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
                     missile.scale = 1;
                     float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
+                    
 
                     if (missile.pathVector.Y < 0)
                     {
@@ -370,6 +371,8 @@ namespace WindowsPhoneGame1
                         //a full 2*PI range. 
                         rotation = -rotation;
                     }
+
+                    rotation = rotation + (float)(Math.PI / 2);
 
                     missile.rotation = rotation;
                     m_missiles.Add(missile);
@@ -604,7 +607,7 @@ namespace WindowsPhoneGame1
             }
             foreach (Missile m in m_missiles)
             {       
-                spriteBatch.Draw(m.texture, MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement), null, m.color, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0f);
+                spriteBatch.Draw(m.texture, MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement), new Rectangle(0,0,16,32), m.color, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0f);
             }
             foreach (Crater c in m_craters)
             {
