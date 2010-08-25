@@ -87,8 +87,9 @@ namespace WindowsPhoneGame1
 
         SoundEffect m_missileLaunch;
         SoundEffect m_missileStrike1;
-        SoundEffect m_missileStrike2;
+        
         SoundEffect m_siren;
+        SoundEffect m_reload;
         Vector2 m_startDragPosition;
         static Vector2 m_translation;
         public static float HalfPI = (float) Math.PI / 2;
@@ -137,7 +138,8 @@ namespace WindowsPhoneGame1
             interceptorTexture = squareTex;
             bugTexture = circleTex;
             missileTexture = Content.Load<Texture2D>("missileTexture");
-
+            
+            
             soundEffect = Content.Load<SoundEffect>("explosion");
             Rectangle clientBounds = this.Window.ClientBounds;
 
@@ -158,7 +160,7 @@ namespace WindowsPhoneGame1
             m_translation = Vector2.Zero;
             m_missileLaunch = Content.Load<SoundEffect>("missile");
             m_missileStrike1 = Content.Load<SoundEffect>("explosion");
-            
+            m_reload = Content.Load<SoundEffect>("17130__NoiseCollector__ak47_chamber_round");
             spriteBatch = new SpriteBatch(GraphicsDevice);
             
             kootenay14 = this.Content.Load<SpriteFont>("Kootenay14");
@@ -349,34 +351,64 @@ namespace WindowsPhoneGame1
 
                 if( timeSinceLastTouchRelease < 500 && !m_StartClickOnAddBuilding)
                 {
-                    var missile = new Missile();
-
-                    Vector2 textSize = kootenay14.MeasureString(TEXT);
-
-                    textSize = kootenay14.MeasureString("missile");
-                    missile.startPosition = m_silos[0].textPosition;
-                    m_silos[0].timeTillNextLaunchMs.TimeLeftInMs = 5000f;
-                    m_silos[0].timeTillNextLaunchMs.TotalTimeInMs = 5000f;
-                    missile.textPosition = missile.startPosition;
-                    missile.texture = missileTexture;
-                    missile.pathVector = touchReleasePoint - missile.startPosition;
-                    missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
-                    missile.scale = 1;
-                    float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
-                    
-
-                    if (missile.pathVector.Y < 0)
+                    List<MissileSilo> availableSilos = m_silos.Where(silo => silo.timeTillNextLaunchMs.TimeLeftInMs <= 0).ToList();
+                    MissileSilo selectedSilo = null;
+                    // there aren't any silos, play a reload sound
+                    if (availableSilos.Count() == 0)
                     {
-                        //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
-                        //a full 2*PI range. 
-                        rotation = -rotation;
+                        m_reload.Play();
+                    }
+                    else if (availableSilos.Count == 1)
+                    {
+                        // only one silo, use the first one. 
+                        selectedSilo = availableSilos[0];
+                    }
+                    else
+                    {
+                        selectedSilo = availableSilos[0];
+                        foreach (MissileSilo available in availableSilos)
+                        {
+                            if ((available.textPosition - touchReleasePoint).LengthSquared() < (selectedSilo.textPosition - touchReleasePoint).LengthSquared())
+                            {
+                                selectedSilo = available;
+                            }
+                        }
                     }
 
-                    rotation = rotation + (float)(Math.PI / 2);
+                    //verify that we actually got a silo, if not, don't launch a missile. 
+                    if (selectedSilo != null)
+                    {
+                        int indexOfSilo = m_silos.IndexOf(selectedSilo);
 
-                    missile.rotation = rotation;
-                    m_missiles.Add(missile);
-                    m_missileLaunch.Play();
+                        var missile = new Missile();
+
+                        Vector2 textSize = kootenay14.MeasureString(TEXT);
+
+                        textSize = kootenay14.MeasureString("missile");
+                        missile.startPosition = m_silos[indexOfSilo].textPosition;
+                        m_silos[indexOfSilo].timeTillNextLaunchMs.TimeLeftInMs = 5000f;
+                        m_silos[indexOfSilo].timeTillNextLaunchMs.TotalTimeInMs = 5000f;
+                        missile.textPosition = missile.startPosition;
+                        missile.texture = missileTexture;
+                        missile.pathVector = touchReleasePoint - missile.startPosition;
+                        missile.lapSpeed = SPEED / (2 * missile.pathVector.Length());
+                        missile.scale = 1;
+                        float rotation = (float)Math.Acos((double)missile.pathVector.X / missile.pathVector.Length());
+
+
+                        if (missile.pathVector.Y < 0)
+                        {
+                            //compensation for the Inverse cosine function, which only has range from (0 < theta < pi ), and we need 
+                            //a full 2*PI range. 
+                            rotation = -rotation;
+                        }
+
+                        rotation = rotation + (float)(Math.PI / 2);
+
+                        missile.rotation = rotation;
+                        m_missiles.Add(missile);
+                        m_missileLaunch.Play();
+                    }
                 }
 
                 // check to see if the release point is outside the bounds of the border control. 
@@ -824,7 +856,7 @@ namespace WindowsPhoneGame1
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class Border : TextureItem
     {
@@ -837,9 +869,10 @@ namespace WindowsPhoneGame1
     /// <summary>
     /// class to wrap the 'cells' that contain the  buildings which the user can deploy, drawn on the screen bottom.
     /// </summary>
-    public class CellControl : TextureItem 
+    public class CellControl : TextureItem
     {
         public Building itemContainedInCell;
+    ///
         public Rectangle boundingRectangle;
         public int SquareDimensionInPixels;
     }
