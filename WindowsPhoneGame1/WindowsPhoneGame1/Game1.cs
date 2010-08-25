@@ -558,11 +558,13 @@ namespace WindowsPhoneGame1
                 if (m.timeTillNextLaunchMs.TimeLeftInMs > 0)
                 {
                     float pixelsProgressed = m.timeTillNextLaunchMs.TotalTimeInMs - m.timeTillNextLaunchMs.TimeLeftInMs;
-                   
-                    for (int i = 0; i < m.timeTillNextLaunchMs.TotalTimeInMs; i++)
+
+                    int progressBarLengthInPixels = 50;
+                    for (int i = 0; i < progressBarLengthInPixels; i++)
                     {
+                        
                         Color c;
-                        if( i < pixelsProgressed)
+                        if (i < progressBarLengthInPixels * (pixelsProgressed / m.timeTillNextLaunchMs.TotalTimeInMs))
                         {
                             c = Color.LightGray;
                         }
@@ -571,7 +573,7 @@ namespace WindowsPhoneGame1
                             c = Color.DarkGray;
                         }
                         Vector2 position = new Vector2(m.textPosition.X, m.textPosition.Y - i);
-                        spriteBatch.Draw(whiteSquare, position, null, c, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                        spriteBatch.Draw(whiteSquare, MapGameToScreenCoordinates(position), null, c, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0);
                     }
                 }
             }
