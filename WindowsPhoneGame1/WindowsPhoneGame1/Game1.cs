@@ -569,14 +569,22 @@ namespace WindowsPhoneGame1
                         Color c;
                         if (i < progressBarLengthInPixels * (pixelsProgressed / m.timeTillNextLaunchMs.TotalTimeInMs))
                         {
-                            c = Color.LightGray;
+                            c = Color.Green;
                         }
                         else
                         {
                             c = Color.DarkGray;
                         }
-                        Vector2 position = new Vector2(m.textPosition.X, m.textPosition.Y - i);
-                        spriteBatch.Draw(whiteSquare, MapGameToScreenCoordinates(position), null, c, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0);
+
+                        // use the white squares to draw a progress bar of length 'progressBarLengthInPixels'. 
+                        // it's three squares wide. The x coordinate is 10 pixels higher than the missile silo texture,
+                        // the y coordinate is positioned such that the progress bars center is just above the silo texture,
+                        // which is why we are adding the silo textures width and the progress bars length. 
+                        Vector2 position = MapGameToScreenCoordinates(new Vector2(m.textPosition.X - 10, m.textPosition.Y - i + progressBarLengthInPixels/2 + m.texture.Bounds.Width/2));
+                        Vector2 positionAbove = new Vector2(position.X + whiteSquare.Bounds.Height, position.Y);
+                        Vector2 positionAboveThat = new Vector2(position.X + 2*whiteSquare.Bounds.Height, position.Y);
+                        spriteBatch.Draw(whiteSquare, position, null, c, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0);
+                        spriteBatch.Draw(whiteSquare, position, null, c, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0);
                     }
                 }
             }
