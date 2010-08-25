@@ -144,9 +144,8 @@ namespace WindowsPhoneGame1
             debugOutput.Add("x:");
             debugOutput.Add("y:");
             Random r = new Random();
-            for(int i = 0; i < 10; i++)
-            {
-                
+            for(int i = 0; i < 20; i++)
+            {                
                 int rx = r.Next(-600, 600 );
                 int ry = r.Next(-300, 300 );
                 float rRotation = (float)r.NextDouble() * 3f;
@@ -281,6 +280,7 @@ namespace WindowsPhoneGame1
                 this.Exit();
 
             var touchState = TouchPanel.GetState();
+            System.Diagnostics.Debug.Assert(touchState.Count() <= 1);
 
             if (touchState.Count > 0)
             {
@@ -325,13 +325,16 @@ namespace WindowsPhoneGame1
                 m_translation += touchState[0].Position - m_previousTouchState[0].Position;
             }
 
+            if (touchState.Count > 0 && touchState[0].State == TouchLocationState.Released)
+            {
+                
+            }
+
             // check to see if the user has released an existing touch.
             if( touchState.Count > 0 
-                && touchState[0].State == TouchLocationState.Released 
-                && (m_previousTouchState[0].State == TouchLocationState.Moved || m_previousTouchState[0].State == TouchLocationState.Pressed) )
+                && touchState[0].State == TouchLocationState.Released)
 
             {
-
                 touchReleaseTimeInMs.Add((float)gameTime.TotalGameTime.TotalMilliseconds);
 
                 Vector2 touchReleasePoint = MapClickPointToMapCoordinates(touchState[0].Position);
@@ -344,7 +347,7 @@ namespace WindowsPhoneGame1
                 }
 
 
-                if( timeSinceLastTouchRelease < 1000 && !m_StartClickOnAddBuilding)
+                if( timeSinceLastTouchRelease < 5000 && !m_StartClickOnAddBuilding)
                 {
                     var missile = new Missile();
 
@@ -548,8 +551,7 @@ namespace WindowsPhoneGame1
 
             // Draw the sprite.
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
-            //spriteBatch.Draw(texture1, spritePosition1, Color.White);
-            spriteBatch.DrawString(kootenay14, TEXT, textPosition, Color.White);
+
             foreach(MissileSilo m in m_silos)
             {
                 spriteBatch.Draw(m.texture, MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement), m.color);
