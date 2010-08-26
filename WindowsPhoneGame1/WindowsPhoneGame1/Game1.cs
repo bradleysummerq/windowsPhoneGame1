@@ -701,53 +701,79 @@ namespace WindowsPhoneGame1
                         SpriteEffects.None, 
                         0f);
             }
-            foreach (IDetector d in detectors)
-            {
-                Color c = Color.White;
-                c = c * 0.1f;                
-                
-                spriteBatch.Draw(LineOfSiteTexture, MapGameToScreenCoordinates(new Vector2(d.position.X - LineOfSiteTexture.Bounds.Width / 2, d.position.Y - LineOfSiteTexture.Bounds.Width / 2)), null, c, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0f); 
-            }
             foreach (CellControl c in m_cells)
             {
-                
                 spriteBatch.Draw(c.texture, c.textPosition, null, Color.White, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
             }
             foreach (Border b in m_borders)
-            {
-                spriteBatch.Draw(b.texture, b.textPosition, null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
+            {   
+                spriteBatch.Draw(b.texture, b.textPosition, null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);   
             }
             foreach (Missile m in m_missiles)
             {       
-                spriteBatch.Draw(m.texture, MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement), new Rectangle(0,0,16,32), m.color, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0f);
+                Vector2 pos = MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement);
+                if( IsOnScreen( pos ) )
+                {
+                    spriteBatch.Draw(m.texture, MapGameToScreenCoordinates(m.textPosition + GlobalDisplacement), new Rectangle(0,0,16,32), m.color, m.rotation, Vector2.Zero, m.scale, SpriteEffects.None, 0f);
+                }
             }
             foreach (Crater c in m_craters)
             {
-                spriteBatch.Draw(c.texture, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), null, c.color, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
+                Vector2 pos = MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement);
+                if( IsOnScreen( pos ) )
+                {
+                    spriteBatch.Draw(c.texture, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), null, c.color, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
+                }
             }
             foreach(Radar r in m_radar)
             {
-                spriteBatch.Draw(r.texture, MapGameToScreenCoordinates(r.textPosition + GlobalDisplacement), null, r.color, r.rotation, Vector2.Zero, r.scale, SpriteEffects.None, 0f);
+                Vector2 pos = MapGameToScreenCoordinates(r.textPosition + GlobalDisplacement);
+                if( IsOnScreen( pos ) )
+                {
+                    spriteBatch.Draw(r.texture, MapGameToScreenCoordinates(r.textPosition + GlobalDisplacement), null, r.color, r.rotation, Vector2.Zero, r.scale, SpriteEffects.None, 0f);
+                }
             }
             foreach (InterceptorSite i in m_interceptorSites)
             {
-                spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
+                Vector2 pos = MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement);
+                if( IsOnScreen( pos ) )
+                {
+                    spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
+                }
             }
             foreach (Interceptor i in m_interceptors)
             {
-                spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
+                Vector2 pos = MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement);
+                if( IsOnScreen( pos ) )
+                {
+                    spriteBatch.Draw(i.texture, MapGameToScreenCoordinates(i.textPosition + GlobalDisplacement), null, i.color, i.rotation, Vector2.Zero, i.scale, SpriteEffects.None, 0f);
+                }
             }
             foreach(Bug b in m_bugs)
             {
-                spriteBatch.Draw(b.texture, MapGameToScreenCoordinates(b.textPosition + GlobalDisplacement), null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
+                Vector2 pos = MapGameToScreenCoordinates(b.textPosition + GlobalDisplacement);
+                if( IsOnScreen( pos ) )
+                {
+                    spriteBatch.Draw(b.texture, MapGameToScreenCoordinates(b.textPosition + GlobalDisplacement), null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
+                }
             }
             foreach(Ground g in m_ground)
             {
-                spriteBatch.Draw(g.texture, MapGameToScreenCoordinates(g.textPosition + GlobalDisplacement), null, AdjustColorForDetection(g), g.rotation, Vector2.Zero, g.scale, SpriteEffects.None, 0f);
+                Vector2 pos = MapGameToScreenCoordinates(g.textPosition + GlobalDisplacement);
+
+                //an attempt to only draw this stuff if it's actually on screen.
+                if (IsOnScreen(pos) )
+                {
+                    spriteBatch.Draw(g.texture, pos, null, AdjustColorForDetection(g), g.rotation, Vector2.Zero, g.scale, SpriteEffects.None, 0f);
+                }
             }
             foreach(Catnip c in m_catnip)
             {
-                spriteBatch.Draw(c.texture, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), null, c.color, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
+                Vector2 pos = MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement);
+                if( IsOnScreen( pos ) )
+                {
+                    spriteBatch.Draw(c.texture, MapGameToScreenCoordinates(c.textPosition + GlobalDisplacement), null, c.color, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
+                }
             }
             if(m_StartClickOnAddBuilding && m_previousTouchState.Count > 0)
             {
@@ -781,6 +807,18 @@ namespace WindowsPhoneGame1
                     (int)(r.Y + m_translation.Y),
                     r.Height,
                     r.Width);
+        }
+
+        public bool IsOnScreen(Vector2 pos)
+        {
+            if (pos.X > upperCoordX && pos.X < lowerCoordX && pos.Y > rightCoordY && pos.Y < leftCoordY)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public Rectangle GetRectangleCoordinatesForTexture(TextureItem t)
