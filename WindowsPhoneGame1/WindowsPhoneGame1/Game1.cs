@@ -64,7 +64,9 @@ namespace WindowsPhoneGame1
         public static Texture2D radarTexture;
         public static Texture2D interceptorTexture;
         public static Texture2D bugTexture;
+        public static Texture2D groundTexture;
         public static Texture2D CatnipTexture;
+        public Texture2D LineOfSiteTexture;
         public Texture2D missileTexture;
 
         List<Crater> m_craters = new List<Crater>();
@@ -77,8 +79,10 @@ namespace WindowsPhoneGame1
         List<Radar> m_radar = new List<Radar>();
         List<MissileSilo> m_silos = new List<MissileSilo>();
         List<Bug> m_bugs= new List<Bug>();
+        List<Ground> m_ground = new List<Ground>();
         List<Catnip> m_catnip = new List<Catnip>();
-
+        List<IDetector> m_detectors = new List<IDetector>();
+        Rectangle detectorBoundingRectangle;
         Dictionary<Building,Texture2D> buildingToTextureMap = new Dictionary<Building,Texture2D>();
         bool m_IsKeyDown;
         bool m_StartClickOnObject;
@@ -135,10 +139,12 @@ namespace WindowsPhoneGame1
             squareTex = Content.Load<Texture2D>("squared");
             triangleTex = Content.Load<Texture2D>("triangle");
             whiteSquare = Content.Load<Texture2D>("white2x2");
+            LineOfSiteTexture = Content.Load<Texture2D>("LOSCircle");
             siloTexture = triangleTex;
             radarTexture = circleTex;
             interceptorTexture = squareTex;
             bugTexture = circleTex;
+            groundTexture = Content.Load<Texture2D>("ground");
             CatnipTexture = triangleTex;
             missileTexture = Content.Load<Texture2D>("missileTexture");
             
@@ -170,6 +176,19 @@ namespace WindowsPhoneGame1
                 c.textPosition = new Vector2(rx, ry);
                 m_catnip.Add(c);
             }
+
+            for(int i = 0; i < 1000; i++)
+            {                
+                int rx = r.Next(-600, 600 );
+                int ry = r.Next(-300, 300 );
+                float rRotation = (float)r.NextDouble() * 3f;
+                Ground g = new Ground();
+                g.color = Color.White * ((float)r.NextDouble()/2);
+                g.rotation = rRotation;
+                g.textPosition = new Vector2(rx, ry);
+                m_ground.Add(g);
+            }
+
 
             m_translation = Vector2.Zero;
             m_missileLaunch = Content.Load<SoundEffect>("missile");
@@ -543,7 +562,7 @@ namespace WindowsPhoneGame1
             int MaxY =
                 graphics.GraphicsDevice.Viewport.Height - texture1.Height;
             int MinY = 0;
-
+            
             // Check for bounce.
             if (spritePosition.X > MaxX)
             {
@@ -596,6 +615,27 @@ namespace WindowsPhoneGame1
                     float displacement = (float) (400 * Math.Sin(timeSinceShockStart) / timeSinceShockStart);
                     GlobalDisplacement += new Vector2( 0f, displacement);
                 }
+            }
+
+            List<IDetector> detectors = m_radar.Cast<IDetector>().ToList().Union(m_interceptorSites.Cast<IDetector>()).ToList().Union(m_silos.Cast<IDetector>() ).ToList();
+
+            // check to see if a new detector has been added. 
+            // if it has, we'll have to update our detector bounding rectangles. 
+            if (detectors.Count() != m_detectors.Count())
+            {
+                m_detectors = detectors;
+
+                //grab the first element in the detectors list, 
+                //just so that we have some rectangle to start our intersection off of
+                //(I'm not sure what the behavior of the Union function is with an uninitialize rectangle)
+                Rectangle boundingRectangle = new Rectangle((int)m_detectors[0].position.X, (int)m_detectors[0].position.Y, (int)m_detectors[0].detectionRadiusSquared, (int)m_detectors[0].detectionRadiusSquared);
+                foreach (IDetector d in m_detectors)
+                {
+                    Rectangle r = new Rectangle((int)d.position.X, (int)d.position.Y, (int)d.detectionRadiusSquared, (int)d.detectionRadiusSquared);
+                    boundingRectangle = Rectangle.Union(boundingRectangle, r);
+                }
+
+                detectorBoundingRectangle = boundingRectangle;
             }
 
             // Draw the sprite.
@@ -651,8 +691,17 @@ namespace WindowsPhoneGame1
                         SpriteEffects.None, 
                         0f);
             }
+            foreach (IDetector d in detectors)
+            {
+                Color c = Color.White;
+                c = c * 0.1f;
+                
+                
+                spriteBatch.Draw(LineOfSiteTexture, MapGameToScreenCoordinates(new Vector2(d.position.X - LineOfSiteTexture.Bounds.Width / 2, d.position.Y - LineOfSiteTexture.Bounds.Width / 2)), null, c, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0f); 
+            }
             foreach (CellControl c in m_cells)
             {
+                
                 spriteBatch.Draw(c.texture, c.textPosition, null, Color.White, c.rotation, Vector2.Zero, c.scale, SpriteEffects.None, 0f);
             }
             foreach (Border b in m_borders)
@@ -682,6 +731,10 @@ namespace WindowsPhoneGame1
             foreach(Bug b in m_bugs)
             {
                 spriteBatch.Draw(b.texture, MapGameToScreenCoordinates(b.textPosition + GlobalDisplacement), null, b.color, b.rotation, Vector2.Zero, b.scale, SpriteEffects.None, 0f);
+            }
+            foreach(Ground g in m_ground)
+            {
+                spriteBatch.Draw(g.texture, MapGameToScreenCoordinates(g.textPosition + GlobalDisplacement), null, AdjustColorForDetection(g), g.rotation, Vector2.Zero, g.scale, SpriteEffects.None, 0f);
             }
             foreach(Catnip c in m_catnip)
             {
@@ -754,6 +807,19 @@ namespace WindowsPhoneGame1
             Vector2 mapCoordinates = clickPoint - m_translation;
             return mapCoordinates;
         }
+
+        public Color AdjustColorForDetection(TextureItem t)
+        {
+            //ok, we have an intersection. 
+            if( Vect2Rect(t.textPosition).Intersects( detectorBoundingRectangle ) )
+            {
+                return t.color * 0.9f;
+            }
+            else
+            {
+                return t.color * 0.1f;
+            }
+        }
     }
 
 
@@ -785,7 +851,7 @@ namespace WindowsPhoneGame1
     /// <summary>
     /// 
     /// </summary>
-    public class MissileSilo : TextureItem
+    public class MissileSilo : TextureItem, IDetector
     {
         public TextArt art = new TextArt();
         public TimedThing timeTillNextLaunchMs;
@@ -796,34 +862,73 @@ namespace WindowsPhoneGame1
             this.texture = Game1.siloTexture;
             timeTillNextLaunchMs = new TimedThing();
         }
+        public float detectionRadiusSquared
+        {
+            get { return 100f; }
+        }
+        public Vector2 position
+        {
+            get { return this.textPosition; }
+        }
+    }
+
+    public interface IDetector
+    {
+        float detectionRadiusSquared
+        {
+            get;
+        }
+
+        Vector2 position
+        {
+            get;
+        }
     }
 
     /// <summary>
     /// 
     /// </summary>
-    public class Interceptor : TextureItem
+    public class Interceptor : TextureItem 
     {
     }
     /// <summary>
     /// 
     /// </summary>
-    public class InterceptorSite : TextureItem
+    public class InterceptorSite : TextureItem, IDetector
     {
         public InterceptorSite()
         {
             this.color = Color.LimeGreen;
             this.texture = Game1.interceptorTexture;
         }
+
+        public float detectionRadiusSquared
+        {
+            get { return 100f; }
+        }
+        public Vector2 position
+        {
+            get { return this.textPosition; }
+        }
     }
     /// <summary>
     /// 
     /// </summary>
-    public class Radar : TextureItem
+    public class Radar : TextureItem, IDetector
     {
         public Radar()
         {
             this.color = Color.Blue;
             this.texture = Game1.radarTexture;           
+        }
+
+        public float detectionRadiusSquared
+        {
+            get { return 10000f; }
+        }
+        public Vector2 position
+        {
+            get { return this.textPosition; }
         }
     }
 
@@ -833,6 +938,15 @@ namespace WindowsPhoneGame1
         {
             this.color = Color.LightYellow;
             this.texture = Game1.bugTexture;
+        }
+    }
+
+    public class Ground : TextureItem
+    {
+        public Ground()
+        {
+            this.color = Color.White;
+            this.texture = Game1.groundTexture;
         }
     }
 
