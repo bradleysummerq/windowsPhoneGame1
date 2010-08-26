@@ -177,10 +177,10 @@ namespace WindowsPhoneGame1
                 m_catnip.Add(c);
             }
 
-            for(int i = 0; i < 1000; i++)
+            for(int i = 0; i < 10000; i++)
             {                
-                int rx = r.Next(-600, 600 );
-                int ry = r.Next(-300, 300 );
+                int rx = r.Next(-600, 1200 );
+                int ry = r.Next(-300, 900);
                 float rRotation = (float)r.NextDouble() * 3f;
                 Ground g = new Ground();
                 g.color = Color.White * ((float)r.NextDouble()/2);
@@ -628,10 +628,20 @@ namespace WindowsPhoneGame1
                 //grab the first element in the detectors list, 
                 //just so that we have some rectangle to start our intersection off of
                 //(I'm not sure what the behavior of the Union function is with an uninitialize rectangle)
-                Rectangle boundingRectangle = new Rectangle((int)m_detectors[0].position.X, (int)m_detectors[0].position.Y, (int)m_detectors[0].detectionRadiusSquared, (int)m_detectors[0].detectionRadiusSquared);
+                Rectangle boundingRectangle = new Rectangle(
+                    (int)(m_detectors[0].position.X - m_detectors[0].detectionRadiusSquared / 2),
+                    (int)(m_detectors[0].position.Y - m_detectors[0].detectionRadiusSquared / 2),
+                    (int)m_detectors[0].detectionRadiusSquared, 
+                    (int)m_detectors[0].detectionRadiusSquared);
+
                 foreach (IDetector d in m_detectors)
                 {
-                    Rectangle r = new Rectangle((int)d.position.X, (int)d.position.Y, (int)d.detectionRadiusSquared, (int)d.detectionRadiusSquared);
+                    Rectangle r = new Rectangle(
+                        (int)(d.position.X - d.detectionRadiusSquared/2),
+                        (int)(d.position.Y - d.detectionRadiusSquared/2), 
+                        (int)d.detectionRadiusSquared, 
+                        (int)d.detectionRadiusSquared);
+                    
                     boundingRectangle = Rectangle.Union(boundingRectangle, r);
                 }
 
@@ -694,8 +704,7 @@ namespace WindowsPhoneGame1
             foreach (IDetector d in detectors)
             {
                 Color c = Color.White;
-                c = c * 0.1f;
-                
+                c = c * 0.1f;                
                 
                 spriteBatch.Draw(LineOfSiteTexture, MapGameToScreenCoordinates(new Vector2(d.position.X - LineOfSiteTexture.Bounds.Width / 2, d.position.Y - LineOfSiteTexture.Bounds.Width / 2)), null, c, 0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0f); 
             }
@@ -810,15 +819,23 @@ namespace WindowsPhoneGame1
 
         public Color AdjustColorForDetection(TextureItem t)
         {
-            //ok, we have an intersection. 
+            // first, check to see if the texture is within our bounding Rectangle.  
+            // this provides a cheap test to eliminate things which obviously aren't 
+            // within line of site. 
             if( Vect2Rect(t.textPosition).Intersects( detectorBoundingRectangle ) )
             {
-                return t.color * 0.9f;
+                //It is within our bounding rectangle... do the more expensive test of 
+                //checking all detectors and seeing if this texture should be lit up or not. 
+                foreach( IDetector d in m_detectors)
+                {
+                    if ((d.position - t.textPosition).LengthSquared() < d.detectionRadiusSquared)
+                    {
+                        return t.color * 0.9f;
+                    }
+                }
             }
-            else
-            {
-                return t.color * 0.1f;
-            }
+            
+            return t.color * 0.1f;
         }
     }
 
@@ -864,7 +881,7 @@ namespace WindowsPhoneGame1
         }
         public float detectionRadiusSquared
         {
-            get { return 100f; }
+            get { return 1000f; }
         }
         public Vector2 position
         {
@@ -904,7 +921,7 @@ namespace WindowsPhoneGame1
 
         public float detectionRadiusSquared
         {
-            get { return 100f; }
+            get { return 1000f; }
         }
         public Vector2 position
         {
@@ -924,7 +941,7 @@ namespace WindowsPhoneGame1
 
         public float detectionRadiusSquared
         {
-            get { return 10000f; }
+            get { return 50000f; }
         }
         public Vector2 position
         {
