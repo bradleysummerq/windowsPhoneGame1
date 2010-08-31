@@ -17,6 +17,8 @@ namespace WindowsPhoneGame1
     /// </summary>
     public class Game1 : Microsoft.Xna.Framework.Game
     {
+        Random random;
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Texture2D texture1;
@@ -25,6 +27,7 @@ namespace WindowsPhoneGame1
         Vector2 spritePosition2;
         Vector2 spriteSpeed1 = new Vector2(50.0f, 50.0f);
         Vector2 spriteSpeed2 = new Vector2(100.0f, 100.0f);
+        Vector2 craterPosition;
         int sprite1Height;
         int sprite1Width;
         int sprite2Height;
@@ -68,6 +71,19 @@ namespace WindowsPhoneGame1
         public static Texture2D CatnipTexture;
         public Texture2D LineOfSiteTexture;
         public Texture2D missileTexture;
+        public Texture2D drawingTexture;
+        public Texture2D groundTest;
+        public Texture2D craterTest;
+        Vector2 planetPosition;
+        bool firstTime = true;
+        RenderTarget2D renderTargetA;
+        RenderTarget2D renderTargetB;
+        RenderTarget2D activeRenderTarget;
+        RenderTarget2D textureRenderTarget;
+
+        AlphaTestEffect alphaTestEffect;
+        DepthStencilState stencilAlways;
+        DepthStencilState stencilKeepIfZero;
 
         List<Crater> m_craters = new List<Crater>();
         List<Missile> m_missiles = new List<Missile>();
@@ -130,6 +146,7 @@ namespace WindowsPhoneGame1
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            random = new Random();
 
             spriteBatch = new SpriteBatch(GraphicsDevice);
             texture1 = Content.Load<Texture2D>("GameThumbnail");
@@ -147,10 +164,58 @@ namespace WindowsPhoneGame1
             groundTexture = Content.Load<Texture2D>("ground");
             CatnipTexture = triangleTex;
             missileTexture = Content.Load<Texture2D>("missileTexture");
+
+            groundTest = Content.Load<Texture2D>("AlphaEffectTestGround");
+            craterTest = Content.Load<Texture2D>("AlphaEffectTestWhole");
             
             
             soundEffect = Content.Load<SoundEffect>("explosion");
             Rectangle clientBounds = this.Window.ClientBounds;
+
+            alphaTestEffect = new AlphaTestEffect(GraphicsDevice);
+            alphaTestEffect.VertexColorEnabled = true;
+            alphaTestEffect.DiffuseColor = Color.White.ToVector3();
+            alphaTestEffect.AlphaFunction = CompareFunction.Equal;
+            alphaTestEffect.ReferenceAlpha = 0;
+            alphaTestEffect.World = Matrix.Identity;
+            alphaTestEffect.View = Matrix.Identity;
+ 
+
+
+            // set up stencil state to always replace stencil buffer with 1
+            stencilAlways = new DepthStencilState();
+            stencilAlways.StencilEnable = true;
+            stencilAlways.StencilFunction = CompareFunction.Always;
+            stencilAlways.StencilPass = StencilOperation.Replace;
+            stencilAlways.ReferenceStencil = 1;
+            stencilAlways.DepthBufferEnable = false;
+
+
+            // set up stencil state to pass if the stencil value is 0
+            stencilKeepIfZero = new DepthStencilState();
+            stencilKeepIfZero.StencilEnable = true;
+            stencilKeepIfZero.StencilFunction = CompareFunction.Equal;
+            stencilKeepIfZero.StencilPass = StencilOperation.Keep;
+            stencilKeepIfZero.ReferenceStencil = 0;
+            stencilKeepIfZero.DepthBufferEnable = false;
+
+            int PlanetDataSize = 64;
+
+            // create render targets
+            renderTargetA = new RenderTarget2D(GraphicsDevice, PlanetDataSize, PlanetDataSize,
+                                               false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8,
+                                               0, RenderTargetUsage.DiscardContents);
+
+            renderTargetB = new RenderTarget2D(GraphicsDevice, PlanetDataSize, PlanetDataSize,
+                                               false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8,
+                                               0, RenderTargetUsage.DiscardContents);
+
+
+            // set up the ping-pong texture pointers
+            activeRenderTarget = renderTargetA;
+            textureRenderTarget = renderTargetB;
+            drawingTexture = groundTest;
+
 
             debugOutput.Add("x:");
             debugOutput.Add("y:");
@@ -313,6 +378,10 @@ namespace WindowsPhoneGame1
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back ==
                 ButtonState.Pressed)
                 this.Exit();
+
+            planetPosition = new Vector2(GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f - groundTexture.Bounds.Width * 0.4f,
+                                         GraphicsDevice.PresentationParameters.BackBufferHeight * 0.5f - groundTexture.Bounds.Width * 0.4f);
+
 
             var touchState = TouchPanel.GetState();
             System.Diagnostics.Debug.Assert(touchState.Count() <= 1);
@@ -530,6 +599,10 @@ namespace WindowsPhoneGame1
                             m_bugs.Remove(b);
                         }
                     }
+                    
+                    craterPosition = new Vector2(random.Next(64), random.Next(64));
+
+                    AddCrater(craterPosition);
                 }
 
                 m.textPosition = m.startPosition + m.pathVector * pLap;
@@ -779,6 +852,8 @@ namespace WindowsPhoneGame1
             {
                 spriteBatch.Draw(buildingToTextureMap[selectedBuilding], m_previousTouchState[0].Position, null, Color.Green, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
+
+            spriteBatch.Draw(drawingTexture, planetPosition, Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);
@@ -870,6 +945,76 @@ namespace WindowsPhoneGame1
             }
             
             return t.color * 0.1f;
+        }
+        
+        public void AddCrater(Vector2 position)
+        {
+            // set up rendering to the active render target
+            GraphicsDevice.SetRenderTarget(activeRenderTarget);
+
+            // clear the render target to opaque black,
+            // and initialize the stencil buffer with all zeroes
+            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.Stencil,
+                                 new Color(0, 0, 0, 1), 0, 0);
+
+
+            // draw the new craters into the stencil buffer
+            // stencilAlways makes sure we'll always write a 1
+            // to the stencil buffer wherever we draw the alphaTestEffect
+            // is set up to only write 8a pixel if the alpha value
+            // of the source texture is zero
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, 
+                              null, stencilAlways, null, alphaTestEffect);
+
+            Vector2 origin = new Vector2(craterTest.Width * 0.5f,
+                                         craterTest.Height * 0.5f);
+
+            float rotation = (float)random.NextDouble() * MathHelper.TwoPi;
+            Rectangle r = new Rectangle((int)position.X, (int)position.Y, 50, 50);
+
+            spriteBatch.Draw(craterTest, r, null, Color.White, rotation, 
+                             origin, SpriteEffects.None, 0);
+
+            spriteBatch.End();
+
+
+            // now draw the latest planet texture, excluding the stencil
+            // buffer, resulting in the new craters being excluded from
+            // the drawing the first time through we don't have a latest
+            // planet texture, so draw from the original texture
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque,
+                              null, stencilKeepIfZero, null, null);
+
+            if (firstTime)
+            {
+              spriteBatch.Draw(groundTest, Vector2.Zero, Color.White);
+              firstTime = false;
+            }
+            else
+              spriteBatch.Draw(textureRenderTarget, Vector2.Zero, Color.White);
+
+            spriteBatch.End();
+
+
+            // restore main render target - this lets us get at the render target we just drew and use it as a texture
+            GraphicsDevice.SetRenderTarget(null);
+
+
+            //// save image for testing
+            //using (FileStream f = new FileStream("planet.png", FileMode.Create))
+            //{
+            //  activeRenderTarget.SaveAsPng(f, 256, 256);
+            //}
+
+
+
+            // swap render targets, so the next time our source texture is the render target we just drew,
+            // and the one we'll be drawing on is the one we just used as our source texture this time
+            RenderTarget2D t = activeRenderTarget;
+            activeRenderTarget = textureRenderTarget;
+            textureRenderTarget = t;
+
+            drawingTexture = textureRenderTarget;
         }
     }
 
