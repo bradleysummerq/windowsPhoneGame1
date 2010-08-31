@@ -781,10 +781,6 @@ namespace WindowsPhoneGame1
             }
             spriteBatch.End();
 
-            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.Opaque);
-            //spriteBatch.Draw(texture2, spritePosition2, Color.Gray);
-            spriteBatch.End();
-
             base.Draw(gameTime);
         }
 
@@ -966,6 +962,7 @@ namespace WindowsPhoneGame1
             get { return this.textPosition; }
         }
     }
+
     /// <summary>
     /// 
     /// </summary>
